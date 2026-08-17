@@ -1,0 +1,8 @@
+import { notFound } from "next/navigation";
+import { RevisionHistory, type RevisionRow } from "@/components/admin/revision-history";
+import { canManageContent, getAdminUser } from "@/lib/auth/admin";
+import { cmsModules, isCmsModuleKey } from "@/lib/cms/config";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic="force-dynamic";
+export default async function HistoryPage({params}:{params:Promise<{module:string;id:string}>}){const {module,id}=await params;if(!isCmsModuleKey(module))notFound();const user=await getAdminUser();if(!user||user.role==="reservation_staff")return <p role="alert">You do not have permission to view CMS history.</p>;const config=cmsModules[module];const supabase=await createClient();const [entity,revisions]=await Promise.all([supabase.from(config.table).select("updated_at").eq("id",id).maybeSingle(),supabase.from("content_revisions").select("id,version,snapshot,change_summary,created_at,profiles:changed_by(full_name)").eq("entity_type",config.table).eq("entity_id",id).order("version",{ascending:false})]);if(!entity.data)notFound();return <section><p className="text-xs font-bold tracking-[0.2em] text-palem-green uppercase">Publishing history</p><h1 className="mt-3 font-serif text-4xl sm:text-5xl">{config.singular} revisions</h1><p className="mt-4 text-dark-green/60">Restores create a new draft revision and never delete existing history.</p><div className="mt-8"><RevisionHistory module={module} id={id} updatedAt={entity.data.updated_at} revisions={(revisions.data??[]) as unknown as RevisionRow[]} canRestore={canManageContent(user.role)}/></div></section>}

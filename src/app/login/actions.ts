@@ -30,5 +30,8 @@ export async function login(
     return { message: "The email or password is incorrect. Please try again." };
   }
 
+  // Audit failure must not expose database details or strand a valid session.
+  await supabase.rpc("record_auth_activity", { p_action: "login" });
+
   redirect("/admin");
 }

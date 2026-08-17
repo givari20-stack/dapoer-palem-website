@@ -127,6 +127,7 @@ export async function getPublicMenu() {
       .from("menu_categories")
       .select("id,name,slug,description,display_order")
       .eq("active", true)
+      .eq("status", "published")
       .order("display_order"),
     supabase
       .from("menu_items")

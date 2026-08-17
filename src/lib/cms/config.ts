@@ -97,6 +97,8 @@ export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
     singular: "category",
     description: "Organize menu items into active public categories.",
     titleField: "name",
+    statusField: "status",
+    statuses: generalStatuses,
     activeField: "active",
     fields: [
       { name: "name", label: "Name", kind: "text", required: true },

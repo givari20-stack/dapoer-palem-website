@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import type { AdminUser } from "@/lib/auth/admin";
+import { logout } from "@/app/admin/actions";
 
 const navigation = [
   { label: "Dashboard", href: "/admin", enabled: true },
@@ -14,6 +15,7 @@ const navigation = [
   { label: "Media", href: "/admin/media", enabled: true },
   { label: "Reservations", href: "/admin/reservations", enabled: true },
   { label: "Settings", href: "/admin/settings", enabled: true },
+  { label: "Activity", href: "/admin/activity", enabled: true },
 ] as const;
 
 type AdminShellProps = {
@@ -36,11 +38,14 @@ export function AdminShell({ children, user }: AdminShellProps) {
               priority
             />
           </Link>
-          <div className="min-w-0 text-right">
+          <div className="flex min-w-0 items-center gap-4 text-right">
+            <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{user.fullName}</p>
             <p className="mt-0.5 text-[0.65rem] tracking-[0.14em] text-dark-green/55 uppercase">
               {user.role.replaceAll("_", " ")}
             </p>
+            </div>
+            <form action={logout}><button className="rounded-full border border-dark-green/15 px-3 py-2 text-[0.6rem] font-bold tracking-wide uppercase hover:bg-cream">Log out</button></form>
           </div>
         </div>
       </header>

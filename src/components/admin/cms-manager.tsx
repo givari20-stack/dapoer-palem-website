@@ -259,15 +259,14 @@ function CmsEditor({
 
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
     const intent = submitter?.value;
-    if (config.statusField && intent && config.statuses?.includes(intent)) {
-      values.status = intent;
-    }
-    if (config.activeField && intent === "archived") values.active = false;
+    if (intent === "published" && !window.confirm("Publish this content to the public website?")) { setBusy(false); return; }
+    if (intent === "archived" && !window.confirm("Archive this content and remove it from normal public visibility?")) { setBusy(false); return; }
+    const action = intent === "published" ? "publish" : intent === "archived" ? "archive" : intent === "draft" ? "save_draft" : item ? "update" : "create";
 
     const response = await fetch(`/api/admin/cms/${config.key}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id: item?.id, values }),
+      body: JSON.stringify({ id: item?.id, values, intent: action, expectedUpdatedAt: item?.updated_at, changeSummary: formData.get("change_summary") }),
     });
     const payload = (await response.json()) as { item?: CmsRecord; message?: string };
 
@@ -317,6 +316,8 @@ function CmsEditor({
           ))}
         </fieldset>
 
+        {!readOnly ? <label className="mt-5 block"><span className="mb-2 block text-sm font-semibold">Change summary <span className="font-normal text-dark-green/50">(optional)</span></span><input name="change_summary" maxLength={240} className="min-h-12 w-full rounded-md border border-dark-green/20 px-3" placeholder="Briefly describe this meaningful change" /></label> : null}
+
         {error ? (
           <p role="alert" className="mt-5 rounded-md bg-red-50 px-4 py-3 text-sm text-red-900">
             {error}
@@ -324,6 +325,7 @@ function CmsEditor({
         ) : null}
 
         <div className="mt-7 flex flex-wrap justify-end gap-3">
+          {item ? <><a href={`/preview/${config.key}/${item.id}`} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center rounded-full px-5 text-xs font-bold tracking-wide text-palem-green uppercase hover:bg-cream">Preview</a><a href={`/admin/history/${config.key}/${item.id}`} className="inline-flex min-h-12 items-center rounded-full px-5 text-xs font-bold tracking-wide text-palem-green uppercase hover:bg-cream">History</a></> : null}
           <Button type="button" variant="ghost" onClick={close}>Close</Button>
           {!readOnly ? (
             <>
