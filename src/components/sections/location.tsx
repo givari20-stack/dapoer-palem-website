@@ -1,0 +1,54 @@
+import { Container } from "@/components/layout/container";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { getPublicSettings, parseOpeningHours } from "@/lib/settings/public";
+
+export async function Location() {
+  const settings = await getPublicSettings();
+  const hours = parseOpeningHours(settings.opening_hours);
+  return (
+    <section id="location" aria-labelledby="location-title" className="bg-cream py-24 sm:py-32 lg:py-40">
+      <Container>
+        <div className="grid gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:items-center lg:gap-20">
+          <div>
+            <p className="mb-5 text-[0.6875rem] font-bold tracking-[0.24em] text-palem-green uppercase">
+              Location
+            </p>
+            <h2
+              id="location-title"
+              className="font-serif text-5xl leading-[0.95] font-semibold tracking-[-0.03em] text-dark-green sm:text-6xl"
+            >
+              Find your way
+              <span className="block italic text-palem-green">to Dapoer Palem.</span>
+            </h2>
+            <p className="mt-7 max-w-md text-base leading-8 text-dark-green/68">
+              {settings.address || "Official location information has not been supplied yet."}
+            </p>
+            {hours.length > 0 && <dl className="mt-6 space-y-2 text-sm">{hours.map((item)=><div key={item.day} className="flex max-w-sm justify-between gap-6"><dt className="font-semibold">{item.day}</dt><dd className="text-dark-green/65">{item.hours}</dd></div>)}</dl>}
+            {settings.google_maps_url ? <ButtonLink href={settings.google_maps_url} target="_blank" rel="noreferrer" variant="secondary" className="mt-9">Get directions</ButtonLink> : <Button disabled variant="secondary" className="mt-9">Directions unavailable</Button>}
+          </div>
+
+          <div
+            role="img"
+            aria-label={settings.address ? `Location map placeholder for ${settings.address}` : "Map placeholder; official location has not yet been supplied"}
+            className="relative min-h-[28rem] overflow-hidden border border-dark-green/12 bg-brand-white sm:min-h-[36rem]"
+          >
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 opacity-35 [background-image:linear-gradient(to_right,rgb(1_58_20_/_0.16)_1px,transparent_1px),linear-gradient(to_bottom,rgb(1_58_20_/_0.16)_1px,transparent_1px)] [background-size:3rem_3rem]"
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
+              <div className="flex aspect-square w-44 items-center justify-center rounded-full border border-gold/55 bg-cream shadow-[var(--shadow-soft)]">
+                <div>
+                  <p className="font-serif text-2xl font-semibold text-dark-green">Map</p>
+                  <p className="mt-1 text-[0.5625rem] font-bold tracking-[0.14em] text-dark-green/45 uppercase">
+                    {settings.address ? "Location" : "To be added"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Container>
+    </section>
+  );
+}
