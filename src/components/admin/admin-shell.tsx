@@ -8,6 +8,7 @@ import { logout } from "@/app/admin/actions";
 const navigation = [
   { label: "Dashboard", href: "/admin", enabled: true },
   { label: "Homepage", href: "/admin/homepage", enabled: true },
+  { label: "About", href: "/admin/about", enabled: true },
   { label: "Menu", href: "/admin/menu", enabled: true },
   { label: "Promos", href: "/admin/promos", enabled: true },
   { label: "Events", href: "/admin/events", enabled: true },

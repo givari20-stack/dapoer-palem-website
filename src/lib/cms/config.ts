@@ -1,4 +1,5 @@
 export type CmsModuleKey =
+  | "about-content"
   | "homepage-content"
   | "homepage-experiences"
   | "menu-categories"
@@ -46,6 +47,28 @@ export type CmsModuleConfig = {
 const generalStatuses = ["draft", "published", "archived"] as const;
 
 export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
+  "about-content": {
+    key: "about-content",
+    table: "about_content",
+    title: "About Page",
+    singular: "about page",
+    description: "Manage the fixed About page story, image, and call to action.",
+    titleField: "heading",
+    statusField: "status",
+    statuses: generalStatuses,
+    activeField: "active",
+    fields: [
+      { name: "eyebrow", label: "Eyebrow", kind: "text" },
+      { name: "heading", label: "Heading", kind: "text", required: true },
+      { name: "description", label: "Description", kind: "textarea" },
+      { name: "supporting_text", label: "Supporting text", kind: "textarea" },
+      { name: "image_media_id", label: "Selected media", kind: "media" },
+      { name: "cta_label", label: "CTA label", kind: "text" },
+      { name: "cta_url", label: "CTA URL", kind: "text" },
+      { name: "active", label: "Active", kind: "checkbox" },
+      { name: "status", label: "Status", kind: "select", required: true, options: generalStatuses },
+    ],
+  },
   "homepage-content": {
     key: "homepage-content",
     table: "homepage_content",

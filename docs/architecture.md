@@ -4,12 +4,9 @@ The application uses the Next.js App Router under `src/app`. Shared interface
 building blocks live in `src/components`, while static brand assets belong in
 `public`.
 
-## Planned routes
+## Implemented public routes
 
-Only `/` is implemented in Step 1. The following route segments are reserved
-for later steps and should be added as focused features rather than empty public
-pages:
-
+- `/`
 - `/menu`
 - `/promo`
 - `/event`
@@ -17,11 +14,27 @@ pages:
 - `/about`
 - `/reservation`
 - `/contact`
-- `/admin`
-- `/os`
+- `/login`
+- `/preview/[module]/[id]` (authenticated CMS preview)
 
-Public-site UI should remain separate from future `/admin` and `/os` product
-surfaces so their layouts, access rules, and dependencies can evolve safely.
+## Implemented admin routes
+
+- `/admin`
+- `/admin/about`
+- `/admin/activity`
+- `/admin/events`
+- `/admin/gallery`
+- `/admin/history/[module]/[id]`
+- `/admin/homepage`
+- `/admin/media`
+- `/admin/menu`
+- `/admin/promos`
+- `/admin/reservations`
+- `/admin/settings`
+
+Public-site UI remains separate from the protected `/admin` surface so their
+layouts, access rules, and dependencies can evolve safely. A future `/os`
+surface is not currently implemented.
 
 ## Brand assets
 

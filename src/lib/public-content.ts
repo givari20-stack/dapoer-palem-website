@@ -8,6 +8,18 @@ export type PublicMedia = {
   title: string | null;
 };
 
+export type PublicAboutContent = {
+  id: string;
+  eyebrow: string | null;
+  heading: string;
+  description: string | null;
+  supporting_text: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
+  image_url: string | null;
+  image_alt: string | null;
+};
+
 export async function signPublicMedia(
   supabase: Awaited<ReturnType<typeof createClient>>,
   paths: string[],
@@ -15,6 +27,35 @@ export async function signPublicMedia(
   if (!paths.length) return new Map<string, string>();
   const { data } = await supabase.storage.from("media").createSignedUrls(paths, 1800);
   return new Map((data ?? []).map((item) => [item.path, item.signedUrl]));
+}
+
+export async function getAboutContent(): Promise<PublicAboutContent | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("about_content")
+    .select("*,media:image_media_id(storage_path,alt_text,title)")
+    .eq("status", "published")
+    .eq("active", true)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const media = data.media as unknown as PublicMedia | null;
+  const signed = media
+    ? await signPublicMedia(supabase, [media.storage_path])
+    : new Map<string, string>();
+
+  return {
+    id: data.id,
+    eyebrow: data.eyebrow,
+    heading: data.heading,
+    description: data.description,
+    supporting_text: data.supporting_text,
+    cta_label: data.cta_label,
+    cta_url: data.cta_url,
+    image_url: media ? signed.get(media.storage_path) ?? null : null,
+    image_alt: media?.alt_text ?? media?.title ?? null,
+  };
 }
 
 export async function getHomepageContent() {
