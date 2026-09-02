@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, type FormEvent } from "react";
 
+import { MenuBulkManager } from "@/components/admin/menu-bulk-manager";
 import { Button } from "@/components/ui/button";
 import type { CmsField, CmsModuleConfig } from "@/lib/cms/config";
 
@@ -31,6 +32,8 @@ export function CmsManager({
   const [selected, setSelected] = useState<CmsRecord | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const visibleItems = useMemo(() => {
@@ -55,6 +58,19 @@ export function CmsManager({
         ),
       );
   }, [category, config.titleField, featured, items, search, status]);
+
+  const pageSize = 50;
+  const pageCount = Math.max(1, Math.ceil(visibleItems.length / pageSize));
+  const pageItems = visibleItems.slice(page * pageSize, page * pageSize + pageSize);
+
+  function mergeItems(changedItems: CmsRecord[]) {
+    setItems((current) => {
+      const changed = new Map(changedItems.map((item) => [item.id, item]));
+      const merged = current.map((item) => changed.get(item.id) ?? item);
+      const currentIds = new Set(current.map((item) => item.id));
+      return [...changedItems.filter((item) => !currentIds.has(item.id)), ...merged];
+    });
+  }
 
   function open(item: CmsRecord | null) {
     setSelected(item);
@@ -102,13 +118,22 @@ export function CmsManager({
         </p>
       ) : null}
 
+      {config.key === "menu-items" && !readOnly ? (
+        <MenuBulkManager
+          selectedIds={selectedIds}
+          categories={relationOptions.categories ?? []}
+          onItemsChanged={mergeItems}
+          onSelectionChanged={setSelectedIds}
+        />
+      ) : null}
+
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <label>
           <span className="mb-2 block text-xs font-bold tracking-wide uppercase">Search</span>
           <input
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => { setSearch(event.target.value); setPage(0); }}
             className="min-h-12 w-full rounded-md border border-dark-green/20 px-3"
             placeholder={`Search ${config.title.toLocaleLowerCase()}`}
           />
@@ -118,7 +143,7 @@ export function CmsManager({
             <span className="mb-2 block text-xs font-bold tracking-wide uppercase">Status</span>
             <select
               value={status}
-              onChange={(event) => setStatus(event.target.value)}
+              onChange={(event) => { setStatus(event.target.value); setPage(0); }}
               className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3 capitalize"
             >
               <option value="all">All</option>
@@ -134,7 +159,7 @@ export function CmsManager({
           <>
             <label>
               <span className="mb-2 block text-xs font-bold tracking-wide uppercase">Category</span>
-              <select value={category} onChange={(event) => setCategory(event.target.value)} className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3">
+              <select value={category} onChange={(event) => { setCategory(event.target.value); setPage(0); }} className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3">
                 <option value="all">All categories</option>
                 {(relationOptions.categories ?? []).map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -143,7 +168,7 @@ export function CmsManager({
             </label>
             <label>
               <span className="mb-2 block text-xs font-bold tracking-wide uppercase">Featured</span>
-              <select value={featured} onChange={(event) => setFeatured(event.target.value)} className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3">
+              <select value={featured} onChange={(event) => { setFeatured(event.target.value); setPage(0); }} className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3">
                 <option value="all">All items</option>
                 <option value="true">Featured</option>
                 <option value="false">Not featured</option>
@@ -158,6 +183,21 @@ export function CmsManager({
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-dark-green/15 text-xs tracking-wide text-dark-green/55 uppercase">
+                {config.key === "menu-items" && !readOnly ? (
+                  <th className="w-12 px-3 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all menu items on this page"
+                      checked={pageItems.length > 0 && pageItems.every((item) => selectedIds.has(item.id))}
+                      onChange={(event) => setSelectedIds((current) => {
+                        const next = new Set(current);
+                        pageItems.forEach((item) => event.target.checked ? next.add(item.id) : next.delete(item.id));
+                        return next;
+                      })}
+                      className="size-4 accent-palem-green"
+                    />
+                  </th>
+                ) : null}
                 <th className="px-3 py-3">Name</th>
                 <th className="px-3 py-3">Status</th>
                 <th className="px-3 py-3">Order</th>
@@ -165,8 +205,23 @@ export function CmsManager({
               </tr>
             </thead>
             <tbody>
-              {visibleItems.map((item) => (
+              {pageItems.map((item) => (
                 <tr key={item.id} className="border-b border-dark-green/8 last:border-0">
+                  {config.key === "menu-items" && !readOnly ? (
+                    <td className="px-3 py-4">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${String(item[config.titleField] ?? "menu item")}`}
+                        checked={selectedIds.has(item.id)}
+                        onChange={(event) => setSelectedIds((current) => {
+                          const next = new Set(current);
+                          if (event.target.checked) next.add(item.id); else next.delete(item.id);
+                          return next;
+                        })}
+                        className="size-4 accent-palem-green"
+                      />
+                    </td>
+                  ) : null}
                   <td className="px-3 py-4 font-semibold">
                     {String(item[config.titleField] ?? "Untitled")}
                     {item.price !== undefined ? (
@@ -198,6 +253,14 @@ export function CmsManager({
           No content records found.
         </p>
       )}
+
+      {visibleItems.length > pageSize ? (
+        <div className="mt-5 flex items-center justify-end gap-3 text-sm">
+          <button type="button" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="rounded px-3 py-2 font-semibold disabled:opacity-40">Previous</button>
+          <span>Page {page + 1} of {pageCount}</span>
+          <button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="rounded px-3 py-2 font-semibold disabled:opacity-40">Next</button>
+        </div>
+      ) : null}
 
       <CmsEditor
         key={`${selected?.id ?? "new"}-${creating}`}
