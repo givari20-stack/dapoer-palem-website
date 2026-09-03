@@ -11,7 +11,8 @@ export type ExistingMenuLookup = {
 };
 
 export type ValidatedMenuValues = {
-  category_id: string;
+  category_id: string | null;
+  category_key: string | null;
   name: string;
   slug: string;
   description: string | null;
@@ -26,6 +27,8 @@ export type ValidatedMenuValues = {
 };
 
 export type MenuImportClassification = "NEW" | "UPDATE" | "DUPLICATE" | "ERROR";
+export type MenuCategoryClassification = "EXISTING" | "NEW_CATEGORY" | "ERROR";
+export type NewMenuCategory = { key: string; name: string; slug: string; rowNumbers: number[] };
 export type MenuImportPreviewRow = {
   rowNumber: number;
   source: MenuCsvRow;
@@ -35,6 +38,8 @@ export type MenuImportPreviewRow = {
   warnings: string[];
   existingId: string | null;
   expectedUpdatedAt: string | null;
+  categoryClassification: MenuCategoryClassification;
+  categoryKey: string | null;
 };
 
 export function previewMenuImport(
@@ -54,6 +59,8 @@ export function previewMenuImport(
   const seenSku = new Map<string, number>();
   const seenSlug = new Map<string, number>();
   const seenNameCategory = new Map<string, number>();
+  const newCategories = new Map<string, NewMenuCategory>();
+  const conflictingCategoryKeys = findCategorySlugConflicts(rows, categories, categoryByName, categoryBySlug);
 
   const previewRows = rows.map((source, index): MenuImportPreviewRow => {
     const rowNumber = index + 2;
@@ -61,9 +68,26 @@ export function previewMenuImport(
     const warnings: string[] = [];
     const name = limited(source.name, 160, "Name", true, errors);
     const categoryReference = source.category.trim();
+    const categoryName = categoryReference.replace(/\s+/g, " ");
     const category = categoryByName.get(normalize(categoryReference)) ?? categoryBySlug.get(normalize(categoryReference));
-    if (!categoryReference) errors.push("Category is required.");
-    else if (!category) errors.push(`Category “${safeLabel(categoryReference)}” was not found.`);
+    const categoryKey = categoryReference ? normalize(categoryReference) : null;
+    const newCategorySlug = categoryReference ? createCategorySlug(categoryReference) : "";
+    let categoryClassification: MenuCategoryClassification = category ? "EXISTING" : "NEW_CATEGORY";
+    if (!categoryReference) {
+      errors.push("Category is required.");
+      categoryClassification = "ERROR";
+    } else if (categoryName.length > 160) {
+      errors.push("Category must be 160 characters or fewer.");
+      categoryClassification = "ERROR";
+    } else if (!newCategorySlug) {
+      errors.push("Category must contain letters or numbers.");
+      categoryClassification = "ERROR";
+    } else if (!category && categoryKey && conflictingCategoryKeys.has(categoryKey)) {
+      errors.push("Category would reuse a slug belonging to a different category. Edit the category name or create it manually with a distinct slug.");
+      categoryClassification = "ERROR";
+    } else if (!category && categoryKey) {
+      warnings.push(`Category “${safeLabel(categoryReference)}” is new and requires explicit confirmation.`);
+    }
     const description = limited(source.description, 2000, "Description", false, errors);
     const price = numberValue(source.price, "Price", true, errors);
     const originalPrice = numberValue(source.original_price, "Original price", false, errors);
@@ -76,17 +100,24 @@ export function previewMenuImport(
     const status = enumValue(source.status || "draft", ["draft", "published", "archived"] as const, "Status", errors);
     const displayOrder = integerValue(source.display_order || "0", errors);
 
-    const values = errors.length || !category || name === null || slug === null || price === null || featured === null || !availability || !status || displayOrder === null
+    const values = errors.length || categoryClassification === "ERROR" || name === null || slug === null || price === null || featured === null || !availability || !status || displayOrder === null
       ? null
-      : { category_id: category.id, name, slug, description, price, original_price: originalPrice, sku, badge, featured, availability, status, display_order: displayOrder };
+      : { category_id: category?.id ?? null, category_key: category ? null : categoryKey, name, slug, description, price, original_price: originalPrice, sku, badge, featured, availability, status, display_order: displayOrder };
 
-    if (!values) return { rowNumber, source, values: null, classification: "ERROR", errors, warnings, existingId: null, expectedUpdatedAt: null };
+    if (values && categoryClassification === "NEW_CATEGORY" && categoryKey) {
+      const pending = newCategories.get(categoryKey);
+      if (pending) pending.rowNumbers.push(rowNumber);
+      else newCategories.set(categoryKey, { key: categoryKey, name: categoryName, slug: newCategorySlug, rowNumbers: [rowNumber] });
+    }
 
-    const nameCategoryKey = `${normalize(values.name)}:${values.category_id}`;
+    if (!values) return { rowNumber, source, values: null, classification: "ERROR", errors, warnings, existingId: null, expectedUpdatedAt: null, categoryClassification, categoryKey };
+
+    const resolvedCategoryKey = values.category_id ?? `new:${values.category_key}`;
+    const nameCategoryKey = `${normalize(values.name)}:${resolvedCategoryKey}`;
     const duplicateRow = (values.sku ? seenSku.get(values.sku) : undefined) ?? seenSlug.get(values.slug) ?? seenNameCategory.get(nameCategoryKey);
     if (duplicateRow) {
       errors.push(`Duplicates CSV row ${duplicateRow} by SKU, slug, or normalized name and category.`);
-      return { rowNumber, source, values, classification: "DUPLICATE", errors, warnings, existingId: null, expectedUpdatedAt: null };
+      return { rowNumber, source, values, classification: "DUPLICATE", errors, warnings, existingId: null, expectedUpdatedAt: null, categoryClassification, categoryKey };
     }
     if (values.sku) seenSku.set(values.sku, rowNumber);
     seenSlug.set(values.slug, rowNumber);
@@ -96,23 +127,24 @@ export function previewMenuImport(
     const slugMatch = existingBySlug.get(values.slug);
     if (skuMatch && slugMatch && skuMatch.id !== slugMatch.id) {
       errors.push("SKU and slug match different existing menu items.");
-      return { rowNumber, source, values, classification: "DUPLICATE", errors, warnings, existingId: null, expectedUpdatedAt: null };
+      return { rowNumber, source, values, classification: "DUPLICATE", errors, warnings, existingId: null, expectedUpdatedAt: null, categoryClassification, categoryKey };
     }
     const directMatch = skuMatch ?? slugMatch;
     if (directMatch) {
       warnings.push("Existing item will only be updated after explicit confirmation.");
-      return { rowNumber, source, values, classification: "UPDATE", errors, warnings, existingId: directMatch.id, expectedUpdatedAt: directMatch.updated_at };
+      return { rowNumber, source, values, classification: "UPDATE", errors, warnings, existingId: directMatch.id, expectedUpdatedAt: directMatch.updated_at, categoryClassification, categoryKey };
     }
     const nameMatch = existingByNameCategory.get(nameCategoryKey);
     if (nameMatch) {
       errors.push("An existing item has the same normalized name and category; provide its SKU or slug to update it explicitly.");
-      return { rowNumber, source, values, classification: "DUPLICATE", errors, warnings, existingId: nameMatch.id, expectedUpdatedAt: nameMatch.updated_at };
+      return { rowNumber, source, values, classification: "DUPLICATE", errors, warnings, existingId: nameMatch.id, expectedUpdatedAt: nameMatch.updated_at, categoryClassification, categoryKey };
     }
-    return { rowNumber, source, values, classification: "NEW", errors, warnings, existingId: null, expectedUpdatedAt: null };
+    return { rowNumber, source, values, classification: "NEW", errors, warnings, existingId: null, expectedUpdatedAt: null, categoryClassification, categoryKey };
   });
 
   return {
     rows: previewRows,
+    newCategories: [...newCategories.values()],
     summary: {
       total: previewRows.length,
       valid: previewRows.filter((row) => row.classification === "NEW" || row.classification === "UPDATE").length,
@@ -121,6 +153,7 @@ export function previewMenuImport(
       newRecords: previewRows.filter((row) => row.classification === "NEW").length,
       updates: previewRows.filter((row) => row.classification === "UPDATE").length,
       duplicates: previewRows.filter((row) => row.classification === "DUPLICATE").length,
+      newCategories: newCategories.size,
     },
   };
 }
@@ -131,6 +164,39 @@ export function normalizeSku(value: string) {
 
 function normalize(value: string) {
   return value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+}
+
+export function normalizeCategoryName(value: string) {
+  return normalize(value);
+}
+
+export function createCategorySlug(value: string) {
+  return value.trim().toLocaleLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 160).replace(/-+$/g, "");
+}
+
+function findCategorySlugConflicts(
+  rows: MenuCsvRow[],
+  categories: MenuCategoryLookup[],
+  categoryByName: Map<string, MenuCategoryLookup>,
+  categoryBySlug: Map<string, MenuCategoryLookup>,
+) {
+  const keysByGeneratedSlug = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const reference = row.category.trim();
+    const key = normalize(reference);
+    if (!reference || categoryByName.has(key) || categoryBySlug.has(key)) continue;
+    const slug = createCategorySlug(reference);
+    if (!slug) continue;
+    const keys = keysByGeneratedSlug.get(slug) ?? new Set<string>();
+    keys.add(key);
+    keysByGeneratedSlug.set(slug, keys);
+  }
+  const existingSlugs = new Set(categories.map((category) => category.slug.toLocaleLowerCase()));
+  const conflicts = new Set<string>();
+  for (const [slug, keys] of keysByGeneratedSlug) {
+    if (existingSlugs.has(slug) || keys.size > 1) keys.forEach((key) => conflicts.add(key));
+  }
+  return conflicts;
 }
 
 function safeLabel(value: string) {

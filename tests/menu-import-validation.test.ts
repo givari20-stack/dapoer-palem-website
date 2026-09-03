@@ -16,10 +16,53 @@ test("classifies a valid unseen row as NEW", () => {
   assert.equal(result.summary.valid, 1);
 });
 
-test("rejects invalid values and missing categories", () => {
-  const result = previewMenuImport([row({ category: "missing", price: "-1", featured: "maybe" })], [category], []);
+test("rejects invalid values and unusable category names", () => {
+  const result = previewMenuImport([row({ category: "***", price: "-1", featured: "maybe" })], [category], []);
   assert.equal(result.rows[0].classification, "ERROR");
   assert.ok(result.rows[0].errors.length >= 3);
+});
+
+test("classifies normalized missing category references once for explicit creation", () => {
+  const result = previewMenuImport([
+    row({ category: " Drinks ", slug: "first" }),
+    row({ category: "DRINKS", name: "Second", slug: "second" }),
+  ], [category], []);
+  assert.equal(result.newCategories.length, 1);
+  assert.equal(result.newCategories[0].name, "Drinks");
+  assert.deepEqual(result.newCategories[0].rowNumbers, [2, 3]);
+  assert.equal(result.rows[0].categoryClassification, "NEW_CATEGORY");
+});
+
+test("resolves category names and slugs as existing without creating duplicates", () => {
+  const result = previewMenuImport([
+    row({ category: " test   CATEGORY ", slug: "by-name" }),
+    row({ category: "test-category", name: "By slug", slug: "by-slug" }),
+  ], [category], []);
+  assert.equal(result.newCategories.length, 0);
+  assert.equal(result.rows[0].categoryClassification, "EXISTING");
+  assert.equal(result.rows[1].categoryClassification, "EXISTING");
+});
+
+test("rejects a new category whose generated slug belongs to a different category", () => {
+  const result = previewMenuImport([row({ category: "Test Category", slug: "conflict-item" })], [{ ...category, name: "Different Name" }], []);
+  assert.equal(result.rows[0].categoryClassification, "ERROR");
+  assert.equal(result.rows[0].classification, "ERROR");
+});
+
+test("does not silently merge distinct category names that generate the same slug", () => {
+  const result = previewMenuImport([
+    row({ category: "Chef & Table", slug: "first-conflict" }),
+    row({ category: "Chef Table", name: "Second", slug: "second-conflict" }),
+  ], [], []);
+  assert.equal(result.rows[0].categoryClassification, "ERROR");
+  assert.equal(result.rows[1].categoryClassification, "ERROR");
+  assert.equal(result.newCategories.length, 0);
+});
+
+test("rejects overlong new category names instead of truncating them", () => {
+  const result = previewMenuImport([row({ category: "A".repeat(161) })], [], []);
+  assert.equal(result.rows[0].categoryClassification, "ERROR");
+  assert.equal(result.newCategories.length, 0);
 });
 
 test("detects duplicate CSV rows", () => {

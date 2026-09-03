@@ -5,11 +5,12 @@ import { useMemo, useRef, useState, type FormEvent } from "react";
 import type { CmsOption, CmsRecord } from "@/components/admin/cms-manager";
 import { Button } from "@/components/ui/button";
 import { parseMenuCsv, type MenuCsvRow } from "@/lib/menu/csv";
-import type { MenuImportPreviewRow } from "@/lib/menu/import-validation";
+import type { MenuImportPreviewRow, NewMenuCategory } from "@/lib/menu/import-validation";
 
 type Preview = {
   rows: MenuImportPreviewRow[];
-  summary: { total: number; valid: number; warnings: number; errors: number; newRecords: number; updates: number; duplicates: number };
+  newCategories: NewMenuCategory[];
+  summary: { total: number; valid: number; warnings: number; errors: number; newRecords: number; updates: number; duplicates: number; newCategories: number };
 };
 
 type MenuBulkManagerProps = {
@@ -50,6 +51,7 @@ export function MenuBulkManager({ selectedIds, categories, onItemsChanged, onSel
         <Button type="button" variant="secondary" disabled={!selectedCount} onClick={() => void directAction("archive")}>Archive</Button>
         <Button type="button" variant="secondary" disabled={!selectedCount} onClick={() => void directAction("restore")}>Restore</Button>
       </div>
+      <p className="mt-3 text-xs leading-5 text-dark-green/60">Template note: the category column accepts an existing category name, an existing category slug, or a new category name. New categories are only created after preview selection and confirmation.</p>
       {notice ? <p role="status" className="mt-4 rounded-md bg-white px-4 py-3 text-sm">{notice}</p> : null}
       <ImportDialog dialogRef={importDialog} onImported={(changed, message) => { onItemsChanged(changed); setNotice(message); }} />
       <BulkDialog dialogRef={bulkDialog} ids={[...selectedIds]} categories={categories} onSaved={(changed, message) => { onItemsChanged(changed); onSelectionChanged(new Set()); setNotice(message); }} />
@@ -65,9 +67,10 @@ function ImportDialog({ dialogRef, onImported }: { dialogRef: React.RefObject<HT
   const [importValidOnly, setImportValidOnly] = useState(false);
   const [allowUpdates, setAllowUpdates] = useState(false);
   const [page, setPage] = useState(0);
+  const [approvedCategoryKeys, setApprovedCategoryKeys] = useState<Set<string>>(new Set());
   const pageRows = useMemo(() => preview?.rows.slice(page * 50, page * 50 + 50) ?? [], [page, preview]);
 
-  function reset() { setRows([]); setPreview(null); setError(null); setImportValidOnly(false); setAllowUpdates(false); setPage(0); }
+  function reset() { setRows([]); setPreview(null); setError(null); setImportValidOnly(false); setAllowUpdates(false); setApprovedCategoryKeys(new Set()); setPage(0); }
   function close() { if (!busy) { dialogRef.current?.close(); reset(); } }
 
   async function chooseFile(file: File | undefined) {
@@ -83,7 +86,7 @@ function ImportDialog({ dialogRef, onImported }: { dialogRef: React.RefObject<HT
     const payload = await response.json() as Preview & { message?: string };
     setBusy(false);
     if (!response.ok) setError(payload.message ?? "CSV preview could not be prepared.");
-    else setPreview(payload);
+    else { setPreview(payload); setApprovedCategoryKeys(new Set()); }
   }
 
   async function confirmImport() {
@@ -91,26 +94,29 @@ function ImportDialog({ dialogRef, onImported }: { dialogRef: React.RefObject<HT
     const importCount = preview.summary.newRecords + (allowUpdates ? preview.summary.updates : 0);
     if (!importCount) { setError("No new or explicitly confirmed update rows are available."); return; }
     if (preview.summary.errors && !importValidOnly) { setError("Choose “Import valid rows only” or cancel the import."); return; }
-    if (!window.confirm(`Import ${importCount} valid menu items?${allowUpdates ? ` This includes ${preview.summary.updates} confirmed updates.` : ""}`)) return;
+    const eligibleCount = preview.rows.filter((row) => (row.classification === "NEW" || (allowUpdates && row.classification === "UPDATE")) && (row.categoryClassification === "EXISTING" || (row.categoryKey && approvedCategoryKeys.has(row.categoryKey)))).length;
+    if (!eligibleCount) { setError("No menu rows have resolvable, confirmed categories."); return; }
+    if (!window.confirm(`Create ${approvedCategoryKeys.size} new categories and import ${eligibleCount} menu items?${allowUpdates ? ` This may include ${preview.summary.updates} confirmed updates.` : ""}`)) return;
     setBusy(true); setError(null);
-    const response = await fetch("/api/admin/menu/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rows, importValidOnly, allowUpdates }) });
-    const payload = await response.json() as { message?: string; result?: { created: number; updated: number; items: CmsRecord[] }; skipped?: number };
+    const response = await fetch("/api/admin/menu/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rows, importValidOnly, allowUpdates, approvedCategoryKeys: [...approvedCategoryKeys] }) });
+    const payload = await response.json() as { message?: string; result?: { created: number; updated: number; categories_created: number; items: CmsRecord[] }; skipped?: number };
     setBusy(false);
     if (!response.ok || !payload.result) { setError(payload.message ?? "Import failed."); return; }
-    onImported(payload.result.items, `Import complete: ${payload.result.created} created, ${payload.result.updated} updated, ${payload.skipped ?? 0} skipped.`);
+    onImported(payload.result.items, `Import complete: ${payload.result.categories_created} categories created, ${payload.result.created} items created, ${payload.result.updated} updated, ${payload.skipped ?? 0} skipped.`);
     close();
   }
 
   return (
     <dialog ref={dialogRef} aria-labelledby="menu-import-title" className="m-auto max-h-[calc(100vh-2rem)] w-[min(72rem,calc(100%-2rem))] overflow-y-auto rounded-lg bg-white p-0 text-dark-green shadow-2xl backdrop:bg-dark-green/70" onCancel={(event) => { event.preventDefault(); close(); }}>
       <div className="p-6 sm:p-8">
-        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold tracking-[0.18em] text-palem-green uppercase">CSV workflow</p><h3 id="menu-import-title" className="mt-2 font-serif text-4xl">Import Menu</h3><p className="mt-3 max-w-2xl text-sm leading-6 text-dark-green/60">Choose a CSV, review every classification, then explicitly confirm new records and optional updates. Categories are never created automatically.</p></div><button type="button" onClick={close} aria-label="Close import" className="rounded px-3 py-2 text-xl hover:bg-cream">×</button></div>
+        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold tracking-[0.18em] text-palem-green uppercase">CSV workflow</p><h3 id="menu-import-title" className="mt-2 font-serif text-4xl">Import Menu</h3><p className="mt-3 max-w-2xl text-sm leading-6 text-dark-green/60">Choose a CSV, review every classification, resolve categories, then explicitly confirm category creation and optional item updates.</p></div><button type="button" onClick={close} aria-label="Close import" className="rounded px-3 py-2 text-xl hover:bg-cream">×</button></div>
         <label className="mt-7 block rounded-lg border border-dashed border-dark-green/25 bg-cream/40 p-5"><span className="block text-sm font-bold">Menu CSV file</span><input type="file" accept=".csv,text/csv" disabled={busy} onChange={(event) => void chooseFile(event.target.files?.[0])} className="mt-3 block w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-palem-green file:px-5 file:py-3 file:text-xs file:font-bold file:text-white file:uppercase" /></label>
         {busy ? <p role="status" className="mt-5">Processing CSV…</p> : null}
         {error ? <p role="alert" className="mt-5 rounded-md bg-red-50 px-4 py-3 text-sm text-red-900">{error}</p> : null}
         {preview ? <>
           <dl className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">{Object.entries({ Total: preview.summary.total, Valid: preview.summary.valid, Warnings: preview.summary.warnings, Errors: preview.summary.errors, New: preview.summary.newRecords, Updates: preview.summary.updates, Duplicates: preview.summary.duplicates }).map(([label, value]) => <div key={label} className="rounded-md border border-dark-green/10 bg-cream/45 p-3"><dt className="text-[0.65rem] font-bold tracking-wide uppercase">{label}</dt><dd className="mt-1 font-serif text-3xl">{value}</dd></div>)}</dl>
-          <div className="mt-6 max-h-[24rem] overflow-auto rounded-md border border-dark-green/10"><table className="w-full min-w-[54rem] text-left text-sm"><thead className="sticky top-0 bg-dark-green text-white"><tr><th className="p-3">Row</th><th className="p-3">Result</th><th className="p-3">Name</th><th className="p-3">Category</th><th className="p-3">Details</th></tr></thead><tbody>{pageRows.map((row) => <tr key={row.rowNumber} className="border-t border-dark-green/10 align-top"><td className="p-3">{row.rowNumber}</td><td className="p-3 font-bold">{row.classification}</td><td className="p-3">{row.source.name || "—"}</td><td className="p-3">{row.source.category || "—"}</td><td className="p-3"><ul>{[...row.errors, ...row.warnings].map((message) => <li key={message} className={row.errors.includes(message) ? "text-red-800" : "text-amber-800"}>{message}</li>)}</ul></td></tr>)}</tbody></table></div>
+          {preview.newCategories.length ? <section className="mt-6 rounded-lg border border-gold/35 bg-cream/45 p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="font-serif text-2xl">New Categories</h4><p className="mt-1 text-sm text-dark-green/60">Select each category you explicitly approve for creation as a draft.</p></div><div className="flex gap-2"><button type="button" onClick={() => setApprovedCategoryKeys(new Set(preview.newCategories.map((item) => item.key)))} className="rounded px-3 py-2 text-xs font-bold uppercase hover:bg-white">Select all</button><button type="button" onClick={() => setApprovedCategoryKeys(new Set())} className="rounded px-3 py-2 text-xs font-bold uppercase hover:bg-white">Deselect all</button></div></div><div className="mt-4 grid gap-2 sm:grid-cols-2">{preview.newCategories.map((item) => <label key={item.key} className="flex items-start gap-3 rounded-md border border-dark-green/10 bg-white p-3"><input type="checkbox" checked={approvedCategoryKeys.has(item.key)} onChange={(event) => setApprovedCategoryKeys((current) => { const next = new Set(current); if (event.target.checked) next.add(item.key); else next.delete(item.key); return next; })} className="mt-1 size-4 accent-palem-green" /><span><strong>{item.name}</strong><span className="block text-xs text-dark-green/55">/{item.slug} · rows {item.rowNumbers.join(", ")}</span></span></label>)}</div><dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-dark-green/60">New categories to create</dt><dd className="font-bold">{approvedCategoryKeys.size}</dd></div><div><dt className="text-dark-green/60">Menu items eligible to import</dt><dd className="font-bold">{preview.rows.filter((row) => (row.classification === "NEW" || (allowUpdates && row.classification === "UPDATE")) && (row.categoryClassification === "EXISTING" || (row.categoryKey && approvedCategoryKeys.has(row.categoryKey)))).length}</dd></div></dl></section> : null}
+          <div className="mt-6 max-h-[24rem] overflow-auto rounded-md border border-dark-green/10"><table className="w-full min-w-[58rem] text-left text-sm"><thead className="sticky top-0 bg-dark-green text-white"><tr><th className="p-3">Row</th><th className="p-3">Result</th><th className="p-3">Name</th><th className="p-3">Category</th><th className="p-3">Category status</th><th className="p-3">Details</th></tr></thead><tbody>{pageRows.map((row) => <tr key={row.rowNumber} className="border-t border-dark-green/10 align-top"><td className="p-3">{row.rowNumber}</td><td className="p-3 font-bold">{row.classification}</td><td className="p-3">{row.source.name || "—"}</td><td className="p-3">{row.source.category || "—"}</td><td className="p-3 font-semibold">{row.categoryClassification.replace("_", " ")}</td><td className="p-3"><ul>{[...row.errors, ...row.warnings].map((message) => <li key={message} className={row.errors.includes(message) ? "text-red-800" : "text-amber-800"}>{message}</li>)}</ul></td></tr>)}</tbody></table></div>
           {preview.rows.length > 50 ? <div className="mt-3 flex items-center justify-end gap-3"><button type="button" disabled={page === 0} onClick={() => setPage((value) => value - 1)} className="rounded px-3 py-2 text-sm disabled:opacity-40">Previous</button><span className="text-sm">Page {page + 1} of {Math.ceil(preview.rows.length / 50)}</span><button type="button" disabled={(page + 1) * 50 >= preview.rows.length} onClick={() => setPage((value) => value + 1)} className="rounded px-3 py-2 text-sm disabled:opacity-40">Next</button></div> : null}
           <div className="mt-6 grid gap-3"><label className="flex items-start gap-3"><input type="checkbox" checked={importValidOnly} onChange={(event) => setImportValidOnly(event.target.checked)} className="mt-1 size-4 accent-palem-green" /><span><strong>Import valid rows only</strong><span className="block text-sm text-dark-green/60">Required when errors or duplicates exist; invalid rows are skipped.</span></span></label>{preview.summary.updates ? <label className="flex items-start gap-3"><input type="checkbox" checked={allowUpdates} onChange={(event) => setAllowUpdates(event.target.checked)} className="mt-1 size-4 accent-palem-green" /><span><strong>Update {preview.summary.updates} existing records</strong><span className="block text-sm text-dark-green/60">Explicitly permits rows matched by SKU or slug to overwrite CSV-managed fields only.</span></span></label> : null}</div>
         </> : null}

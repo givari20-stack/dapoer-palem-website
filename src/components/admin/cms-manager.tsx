@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
 
 import { MenuBulkManager } from "@/components/admin/menu-bulk-manager";
+import { CategoryBulkManager } from "@/components/admin/category-bulk-manager";
 import { Button } from "@/components/ui/button";
 import type { CmsField, CmsModuleConfig } from "@/lib/cms/config";
 
@@ -66,7 +67,7 @@ export function CmsManager({
   function mergeItems(changedItems: CmsRecord[]) {
     setItems((current) => {
       const changed = new Map(changedItems.map((item) => [item.id, item]));
-      const merged = current.map((item) => changed.get(item.id) ?? item);
+      const merged = current.map((item) => changed.has(item.id) ? { ...item, ...changed.get(item.id) } : item);
       const currentIds = new Set(current.map((item) => item.id));
       return [...changedItems.filter((item) => !currentIds.has(item.id)), ...merged];
     });
@@ -82,8 +83,8 @@ export function CmsManager({
     setItems((current) => {
       const exists = current.some((existing) => existing.id === item.id);
       return exists
-        ? current.map((existing) => (existing.id === item.id ? item : existing))
-        : [item, ...current];
+        ? current.map((existing) => (existing.id === item.id ? { ...existing, ...item } : existing))
+        : [config.key === "menu-categories" ? { ...item, menu_items: [{ count: 0 }] } : item, ...current];
     });
     setNotice(`${config.singular[0].toUpperCase()}${config.singular.slice(1)} saved.`);
     dialogRef.current?.close();
@@ -125,6 +126,9 @@ export function CmsManager({
           onItemsChanged={mergeItems}
           onSelectionChanged={setSelectedIds}
         />
+      ) : null}
+      {config.key === "menu-categories" && !readOnly ? (
+        <CategoryBulkManager selectedIds={selectedIds} onItemsChanged={mergeItems} onSelectionChanged={setSelectedIds} />
       ) : null}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -183,11 +187,11 @@ export function CmsManager({
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-dark-green/15 text-xs tracking-wide text-dark-green/55 uppercase">
-                {config.key === "menu-items" && !readOnly ? (
+                {(config.key === "menu-items" || config.key === "menu-categories") && !readOnly ? (
                   <th className="w-12 px-3 py-3">
                     <input
                       type="checkbox"
-                      aria-label="Select all menu items on this page"
+                      aria-label={`Select all ${config.title.toLocaleLowerCase()} on this page`}
                       checked={pageItems.length > 0 && pageItems.every((item) => selectedIds.has(item.id))}
                       onChange={(event) => setSelectedIds((current) => {
                         const next = new Set(current);
@@ -201,13 +205,14 @@ export function CmsManager({
                 <th className="px-3 py-3">Name</th>
                 <th className="px-3 py-3">Status</th>
                 <th className="px-3 py-3">Order</th>
+                {config.key === "menu-categories" ? <th className="px-3 py-3">Items</th> : null}
                 <th className="px-3 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
               {pageItems.map((item) => (
                 <tr key={item.id} className="border-b border-dark-green/8 last:border-0">
-                  {config.key === "menu-items" && !readOnly ? (
+                  {(config.key === "menu-items" || config.key === "menu-categories") && !readOnly ? (
                     <td className="px-3 py-4">
                       <input
                         type="checkbox"
@@ -234,6 +239,7 @@ export function CmsManager({
                     {String(item.status ?? (item.active ? "active" : "inactive"))}
                   </td>
                   <td className="px-3 py-4">{String(item.display_order ?? "—")}</td>
+                  {config.key === "menu-categories" ? <td className="px-3 py-4">{categoryItemCount(item)}</td> : null}
                   <td className="px-3 py-4 text-right">
                     <button
                       type="button"
@@ -352,7 +358,12 @@ function CmsEditor({
         close();
       }}
     >
-      <form onSubmit={submit} onChange={() => setDirty(true)} className="p-6 sm:p-8">
+      <form onSubmit={submit} onChange={() => setDirty(true)} onInput={(event) => {
+        if (config.key !== "menu-categories" || item || !(event.target instanceof HTMLInputElement) || event.target.name !== "name") return;
+        const form = event.currentTarget;
+        const slug = form.elements.namedItem("slug");
+        if (slug instanceof HTMLInputElement && slug.dataset.edited !== "true") slug.value = createSlug(event.target.value);
+      }} className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-5">
           <div>
             <p className="text-xs font-bold tracking-[0.18em] text-palem-green uppercase">
@@ -449,7 +460,7 @@ function CmsInput({
     return (
       <label className="sm:col-span-2">
         <FieldLabel field={field} />
-        <textarea name={field.name} defaultValue={stringValue} required={field.required} rows={4} className="w-full rounded-md border border-dark-green/20 px-3 py-3" />
+        <textarea name={field.name} defaultValue={stringValue} required={field.required} maxLength={field.maxLength} rows={4} className="w-full rounded-md border border-dark-green/20 px-3 py-3" />
       </label>
     );
   }
@@ -489,10 +500,22 @@ function CmsInput({
         required={field.required}
         min={field.min}
         step={field.step}
+        maxLength={field.maxLength}
+        onChange={field.name === "slug" ? (event) => { event.currentTarget.dataset.edited = "true"; } : undefined}
         className="min-h-12 w-full rounded-md border border-dark-green/20 px-3"
       />
     </label>
   );
+}
+
+function categoryItemCount(item: CmsRecord) {
+  const relation = item.menu_items;
+  if (Array.isArray(relation) && relation[0] && typeof relation[0] === "object" && "count" in relation[0]) return String((relation[0] as { count: unknown }).count ?? 0);
+  return "0";
+}
+
+function createSlug(value: string) {
+  return value.trim().toLocaleLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 160).replace(/-+$/g, "");
 }
 
 function FieldLabel({ field }: { field: CmsField }) {

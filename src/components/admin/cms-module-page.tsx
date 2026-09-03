@@ -33,11 +33,12 @@ export async function CmsModulePage({
     Promise.all(
       moduleKeys.map(async (key) => {
         const config = cmsModules[key];
+        const columns = key === "menu-categories" ? "*,menu_items(count)" : "*";
         const { data, error } = await supabase
           .from(config.table)
-          .select("*")
+          .select(columns)
           .order("created_at", { ascending: false });
-        return { key, data: (data ?? []) as CmsRecord[], error };
+        return { key, data: (data ?? []) as unknown as CmsRecord[], error };
       }),
     ),
     supabase

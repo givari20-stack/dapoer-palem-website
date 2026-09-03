@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { canManageMedia, getAdminUser } from "@/lib/auth/admin";
+import { canManageContent, getAdminUser } from "@/lib/auth/admin";
 import { cmsModules, isCmsModuleKey } from "@/lib/cms/config";
 import { validateCmsValues } from "@/lib/cms/validation";
 import { actionSummary, createCmsSnapshot } from "@/lib/cms/history";
@@ -11,7 +11,7 @@ type RouteContext = { params: Promise<{ module: string }> };
 export async function POST(request: Request, context: RouteContext) {
   const user = await getAdminUser();
   if (!user) return NextResponse.json({ message: "Authentication required." }, { status: 401 });
-  if (!canManageMedia(user.role)) {
+  if (!canManageContent(user.role)) {
     return NextResponse.json({ message: "You do not have permission to edit CMS content." }, { status: 403 });
   }
 
@@ -48,6 +48,23 @@ export async function POST(request: Request, context: RouteContext) {
   if (config.activeField && intent === "archive") validation.values.active = false;
   if (config.activeField && intent === "publish") validation.values.active = true;
   const slug = validation.values.slug;
+
+  if (module === "menu-categories") {
+    if (!Number.isSafeInteger(validation.values.display_order)) {
+      return NextResponse.json({ message: "Display order must be a non-negative integer." }, { status: 400 });
+    }
+    const normalizedName = String(validation.values.name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+    const { data: categories, error: categoryReadError } = await supabase.from("menu_categories").select("id,name");
+    if (categoryReadError) return NextResponse.json({ message: "Categories could not be validated." }, { status: 500 });
+    if ((categories ?? []).some((category) => category.id !== id && category.name.trim().replace(/\s+/g, " ").toLocaleLowerCase() === normalizedName)) {
+      return NextResponse.json({ message: "A category with that normalized name already exists." }, { status: 409 });
+    }
+    const mediaId = validation.values.image_media_id;
+    if (typeof mediaId === "string") {
+      const { data: media } = await supabase.from("media").select("id").eq("id", mediaId).eq("active", true).maybeSingle();
+      if (!media) return NextResponse.json({ message: "Selected media is unavailable." }, { status: 400 });
+    }
+  }
 
   if (typeof slug === "string") {
     let uniquenessQuery = supabase.from(config.table).select("id").eq("slug", slug);

@@ -29,6 +29,7 @@ export type CmsField = {
   relationKey?: string;
   step?: string;
   min?: number;
+  maxLength?: number;
 };
 
 export type CmsModuleConfig = {
@@ -124,12 +125,13 @@ export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
     statuses: generalStatuses,
     activeField: "active",
     fields: [
-      { name: "name", label: "Name", kind: "text", required: true },
-      { name: "slug", label: "Slug", kind: "text", required: true },
-      { name: "description", label: "Description", kind: "textarea" },
+      { name: "name", label: "Name", kind: "text", required: true, maxLength: 160 },
+      { name: "slug", label: "Slug", kind: "text", required: true, maxLength: 160 },
+      { name: "description", label: "Description", kind: "textarea", maxLength: 2000 },
       { name: "image_media_id", label: "Selected media", kind: "media" },
       { name: "display_order", label: "Display order", kind: "number", required: true, min: 0 },
       { name: "active", label: "Active", kind: "checkbox" },
+      { name: "status", label: "Status", kind: "select", required: true, options: generalStatuses },
     ],
   },
   "menu-items": {

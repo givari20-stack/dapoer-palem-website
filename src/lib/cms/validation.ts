@@ -49,6 +49,9 @@ export function validateCmsValues(
       values[field.name] = null;
       continue;
     }
+    if (field.maxLength !== undefined && text.length > field.maxLength) {
+      return { ok: false, message: `${field.label} must be ${field.maxLength} characters or fewer.` };
+    }
 
     if ((field.kind === "media" || field.kind === "relation") && !uuidPattern.test(text)) {
       return { ok: false, message: `${field.label} is invalid.` };
