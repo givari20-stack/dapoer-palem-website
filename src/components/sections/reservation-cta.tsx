@@ -25,9 +25,7 @@ export function ReservationCta({ content }: { content?: HomepageSectionContent }
           >
             {content?.heading ? content.heading : <><span>Make room for</span><span className="block italic text-cream">a shared table.</span></>}
           </h2>
-          <p className="mt-8 max-w-xl text-sm leading-7 text-brand-white/70">
-            {content?.description || "Reservation and contact details will be added when the official booking information is available."}
-          </p>
+          {content?.description ? <p className="mt-8 max-w-xl text-sm leading-7 text-brand-white/70">{content.description}</p> : null}
         </div>
         <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
           <ButtonLink

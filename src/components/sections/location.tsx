@@ -8,6 +8,8 @@ export async function Location({ content }: { content?: HomepageSectionContent }
   const hours = parseOpeningHours(settings.opening_hours);
   const hasPrimaryCta = Boolean(content?.primary_button_label && content.primary_button_url);
   const hasSecondaryCta = Boolean(content?.secondary_button_label && content.secondary_button_url);
+  const hasCoordinates = Boolean(settings.latitude && settings.longitude);
+  const directionsUrl = settings.google_maps_url || (hasCoordinates ? `https://www.google.com/maps?q=${encodeURIComponent(settings.latitude)},${encodeURIComponent(settings.longitude)}` : null);
   return (
     <section id="location" aria-labelledby="location-title" className="bg-cream py-24 sm:py-32 lg:py-40">
       <Container>
@@ -30,7 +32,7 @@ export async function Location({ content }: { content?: HomepageSectionContent }
             <div className="mt-9 flex flex-wrap gap-3">
               {hasPrimaryCta ? <ButtonLink href={content!.primary_button_url!}>{content!.primary_button_label}</ButtonLink> : null}
               {hasSecondaryCta ? <ButtonLink href={content!.secondary_button_url!} variant="secondary">{content!.secondary_button_label}</ButtonLink> : null}
-              {settings.google_maps_url ? <ButtonLink href={settings.google_maps_url} target="_blank" rel="noreferrer" variant="secondary">Get directions</ButtonLink> : <Button disabled variant="secondary">Directions unavailable</Button>}
+              {directionsUrl ? <ButtonLink href={directionsUrl} target="_blank" rel="noreferrer" variant="secondary">Get directions</ButtonLink> : <Button disabled variant="secondary">Directions unavailable</Button>}
             </div>
           </div>
 

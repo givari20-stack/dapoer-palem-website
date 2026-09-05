@@ -13,14 +13,7 @@ export function Venue({ content }: { content?: HomepageSectionContent }) {
             label={content?.image_alt || "Dapoer Palem venue"}
             className="min-h-[28rem] bg-cover bg-center sm:min-h-[38rem] lg:min-h-[46rem]"
             style={content?.image_url ? { backgroundImage: `url(${content.image_url})` } : undefined}
-          >
-            {!content?.image_url ? <div className="absolute inset-x-8 bottom-8 flex items-end justify-between border-t border-brand-white/20 pt-5 sm:inset-x-10 sm:bottom-10">
-              <p className="text-[0.625rem] font-bold tracking-[0.2em] text-gold uppercase">
-                Venue imagery
-              </p>
-              <p className="text-xs text-brand-white/55">To be supplied</p>
-            </div> : null}
-          </EditorialVisual>
+          />
 
           <div className="lg:pb-10">
             <p className="mb-5 text-[0.6875rem] font-bold tracking-[0.24em] text-palem-green uppercase">
@@ -32,9 +25,7 @@ export function Venue({ content }: { content?: HomepageSectionContent }) {
             >
               {content?.heading ? content.heading : <><span>Room to gather,</span><span className="block italic text-palem-green">pause, and stay.</span></>}
             </h2>
-            <p className="mt-8 text-base leading-8 text-dark-green/68">
-              {content?.description || "This section is prepared for the official venue story and photography. Final details about the space will be added once confirmed."}
-            </p>
+            {content?.description ? <p className="mt-8 text-base leading-8 text-dark-green/68">{content.description}</p> : null}
             <div className="mt-9 flex flex-wrap gap-3">
               <ButtonLink href={content?.primary_button_url || "/gallery"} variant="secondary">{content?.primary_button_label || "View Gallery"}</ButtonLink>
               {hasSecondaryCta ? <ButtonLink href={content!.secondary_button_url!} variant="secondary">{content!.secondary_button_label}</ButtonLink> : null}

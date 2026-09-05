@@ -28,19 +28,15 @@ export function Intro({ content }: { content?: HomepageSectionContent }) {
             >
               {content?.heading ? content.heading : <><span>A place for food,</span><span className="block italic text-palem-green">conversation, and connection.</span></>}
             </h2>
-            <div className="mt-10 grid gap-6 border-t border-dark-green/12 pt-8 sm:grid-cols-[1fr_auto] sm:gap-12">
-              <p className="max-w-2xl text-base leading-8 text-dark-green/70 sm:text-lg sm:leading-9">
-                {content?.description || "This introduction will share how food, gathering, and a nature-inspired atmosphere come together at Dapoer Palem. The final brand story will be added when supplied."}
-              </p>
+            {content?.description || hasPrimaryCta || hasSecondaryCta ? <div className="mt-10 grid gap-6 border-t border-dark-green/12 pt-8 sm:grid-cols-[1fr_auto] sm:gap-12">
+              {content?.description ? <p className="max-w-2xl text-base leading-8 text-dark-green/70 sm:text-lg sm:leading-9">{content.description}</p> : <span />}
               {hasPrimaryCta || hasSecondaryCta ? (
                 <div className="flex flex-wrap gap-3 sm:justify-end">
                   {hasPrimaryCta ? <ButtonLink href={content!.primary_button_url!}>{content!.primary_button_label}</ButtonLink> : null}
                   {hasSecondaryCta ? <ButtonLink href={content!.secondary_button_url!} variant="secondary">{content!.secondary_button_label}</ButtonLink> : null}
                 </div>
-              ) : !content ? (
-                <p className="text-[0.625rem] font-bold tracking-[0.18em] text-dark-green/45 uppercase sm:max-w-32">Temporary introduction copy</p>
               ) : null}
-            </div>
+            </div> : null}
           </div>
         </div>
       </Container>

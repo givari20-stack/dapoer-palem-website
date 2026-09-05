@@ -1,6 +1,7 @@
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { Container } from "@/components/layout/container";
+import { ButtonLink } from "@/components/ui/button";
 
 type CollectionPageProps = {
   eyebrow: string;
@@ -19,6 +20,8 @@ export function CollectionPage({
   records,
   variant,
 }: CollectionPageProps) {
+  const formatDate = (value: unknown) => new Intl.DateTimeFormat("id-ID", { dateStyle: "long" }).format(new Date(String(value)));
+  const formatTime = (value: unknown) => String(value).slice(0, 5);
   return (
     <>
       <Navbar mode="solid" />
@@ -46,9 +49,10 @@ export function CollectionPage({
                       <p className="mt-4 text-sm leading-7 text-dark-green/65">
                         {String(record.short_description ?? record.description ?? "")}
                       </p>
-                      {variant === "event" && record.event_date ? (
-                        <p className="mt-5 text-sm font-semibold">{new Intl.DateTimeFormat("id-ID", { dateStyle: "long" }).format(new Date(String(record.event_date)))}</p>
-                      ) : null}
+                      {variant === "promo" && (record.start_date || record.end_date) ? <p className="mt-5 text-sm font-semibold">{[record.start_date ? formatDate(record.start_date) : null, record.end_date ? formatDate(record.end_date) : null].filter(Boolean).join(" – ")}</p> : null}
+                      {variant === "event" && record.event_date ? <p className="mt-5 text-sm font-semibold">{formatDate(record.event_date)}{record.start_time ? ` · ${formatTime(record.start_time)}` : ""}{record.end_time ? `–${formatTime(record.end_time)}` : ""}</p> : null}
+                      {variant === "event" && record.location ? <p className="mt-2 text-sm text-dark-green/60">{String(record.location)}</p> : null}
+                      {record.cta_label && record.cta_url ? <ButtonLink href={String(record.cta_url)} variant="secondary" className="mt-6">{String(record.cta_label)}</ButtonLink> : null}
                     </div>
                   </article>
                 ))}

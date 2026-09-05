@@ -28,9 +28,7 @@ export function MenuCta({ content }: { content?: HomepageSectionContent }) {
           </h2>
         </div>
         <div className="border-t border-brand-white/15 pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
-          <p className="max-w-md text-base leading-8 text-brand-white/70">
-            {content?.description || "The complete Dapoer Palem menu will be presented here once its official dishes and details are supplied."}
-          </p>
+          {content?.description ? <p className="max-w-md text-base leading-8 text-brand-white/70">{content.description}</p> : null}
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink href={content?.primary_button_url || "/menu"}>{content?.primary_button_label || "Explore Menu"}</ButtonLink>
             {hasSecondaryCta ? <ButtonLink href={content!.secondary_button_url!} variant="ghost" className="border-brand-white/25 text-brand-white hover:border-brand-white/50 hover:bg-brand-white/10">{content!.secondary_button_label}</ButtonLink> : null}

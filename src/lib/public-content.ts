@@ -35,10 +35,10 @@ export type HomepageSectionContent = {
 export async function signPublicMedia(
   supabase: Awaited<ReturnType<typeof createClient>>,
   paths: string[],
-) {
+): Promise<Map<string, string>> {
   if (!paths.length) return new Map<string, string>();
   const { data } = await supabase.storage.from("media").createSignedUrls(paths, 1800);
-  return new Map((data ?? []).map((item) => [item.path, item.signedUrl]));
+  return new Map((data ?? []).flatMap((item) => item.path && item.signedUrl ? [[item.path, item.signedUrl]] : []));
 }
 
 export async function getAboutContent(): Promise<PublicAboutContent | null> {
@@ -87,7 +87,7 @@ export async function getHomepageContent() {
         .order("display_order"),
       supabase
         .from("promos")
-        .select("title,short_description,cta_label,cta_url,start_date,end_date")
+        .select("title,short_description,cta_label,cta_url,start_date,end_date,media:image_media_id(storage_path,alt_text,title)")
         .eq("status", "published")
         .or(`start_date.is.null,start_date.lte.${new Date().toISOString()}`)
         .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
@@ -95,15 +95,18 @@ export async function getHomepageContent() {
         .limit(1),
       supabase
         .from("events")
-        .select("title,description,cta_label,cta_url,event_date")
+        .select("title,description,cta_label,cta_url,event_date,start_time,end_time,location,media:image_media_id(storage_path,alt_text,title)")
         .eq("status", "published")
+        .gte("event_date", new Date().toISOString().slice(0, 10))
         .order("event_date")
         .limit(1),
     ]);
 
   const sections = sectionsResult.data ?? [];
   const experiences = experiencesResult.data ?? [];
-  const paths = [...sections, ...experiences]
+  const promos = promosResult.data ?? [];
+  const events = eventsResult.data ?? [];
+  const paths = [...sections, ...experiences, ...promos, ...events]
     .map((record) => {
       const media = record.media as unknown as PublicMedia | null;
       return media?.storage_path;
@@ -130,8 +133,17 @@ export async function getHomepageContent() {
         image_alt: media?.alt_text ?? media?.title ?? null,
       };
     }),
-    promo: promosResult.data?.[0] ?? null,
-    event: eventsResult.data?.[0] ?? null,
+    promo: promos[0] ? attachSignedMedia(promos[0], signed) : null,
+    event: events[0] ? attachSignedMedia(events[0], signed) : null,
+  };
+}
+
+function attachSignedMedia<T extends { media: unknown }>(record: T, signed: Map<string, string>) {
+  const media = record.media as PublicMedia | null;
+  return {
+    ...record,
+    image_url: media ? signed.get(media.storage_path) ?? null : null,
+    image_alt: media?.alt_text ?? media?.title ?? null,
   };
 }
 

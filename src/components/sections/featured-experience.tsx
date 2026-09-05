@@ -1,27 +1,11 @@
+import Link from "next/link";
+
 import { Container } from "@/components/layout/container";
 import { EditorialVisual } from "@/components/ui/editorial-visual";
 
-const fallbackExperiences = [
-  {
-    number: "01",
-    title: "Food",
-    copy: "A future window into the dishes and dining experience, ready for approved menu imagery and copy.",
-  },
-  {
-    number: "02",
-    title: "Drinks",
-    copy: "A reserved space for the drinks collection, to be completed when the real selection is available.",
-  },
-  {
-    number: "03",
-    title: "Atmosphere",
-    copy: "A visual introduction to the setting and sense of place, awaiting official venue photography.",
-  },
-] as const;
+type Experience = { id?: string; title: string; description?: string | null; image_url?: string | null; image_alt?: string | null; link_url?: string | null };
 
-type Experience = { id?: string; title: string; description?: string | null; image_url?: string | null; image_alt?: string | null };
-
-export function FeaturedExperience({ experiences = fallbackExperiences }: { experiences?: readonly Experience[] }) {
+export function FeaturedExperience({ experiences = [] }: { experiences?: readonly Experience[] }) {
   return (
     <section
       aria-labelledby="experience-title"
@@ -40,21 +24,12 @@ export function FeaturedExperience({ experiences = fallbackExperiences }: { expe
               Made to be shared.
             </h2>
           </div>
-          <p className="max-w-sm text-sm leading-7 text-dark-green/60">
-            Image-ready categories for future approved content.
-          </p>
         </div>
 
-        <div className="mt-12 grid gap-12 md:grid-cols-3 md:gap-5 lg:gap-8">
+        {experiences.length ? <div className="mt-12 grid gap-12 md:grid-cols-3 md:gap-5 lg:gap-8">
           {experiences.map((item, index) => {
-            const number = "number" in item && typeof item.number === "string"
-              ? item.number
-              : String(index + 1).padStart(2, "0");
-            const copy = "copy" in item && typeof item.copy === "string"
-              ? item.copy
-              : item.description;
-            return (
-            <article key={item.id ?? item.title} className={index === 1 ? "md:mt-16" : ""}>
+            const number = String(index + 1).padStart(2, "0");
+            const card = <article className={index === 1 ? "md:mt-16" : ""}>
               {item.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={item.image_url} alt={item.image_alt || item.title} className="aspect-[4/5] w-full object-cover" />
@@ -63,20 +38,18 @@ export function FeaturedExperience({ experiences = fallbackExperiences }: { expe
                 <span className="absolute left-6 top-6 text-[0.625rem] font-bold tracking-[0.2em] text-gold sm:left-8 sm:top-8">
                   {number}
                 </span>
-                <span className="absolute bottom-6 right-6 text-[0.625rem] font-bold tracking-[0.15em] text-brand-white/55 uppercase sm:bottom-8 sm:right-8">
-                  Imagery to follow
-                </span>
                 </EditorialVisual>
               )}
               <h3 className="mt-7 font-serif text-4xl font-semibold text-dark-green">
                 {item.title}
               </h3>
               <p className="mt-3 text-sm leading-7 text-dark-green/65">
-                {copy}
+                {item.description}
               </p>
-            </article>
-          );})}
-        </div>
+            </article>;
+            return item.link_url ? <Link key={item.id ?? item.title} href={item.link_url} className="block focus-visible:outline-gold">{card}</Link> : <div key={item.id ?? item.title}>{card}</div>;
+          })}
+        </div> : <p className="mt-12 rounded-lg border border-dashed border-dark-green/20 px-6 py-12 text-center text-dark-green/60">Published experiences will appear here.</p>}
       </Container>
     </section>
   );

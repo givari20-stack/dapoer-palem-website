@@ -3,9 +3,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { EditorialVisual } from "@/components/ui/editorial-visual";
 import type { PublicAboutContent } from "@/lib/public-content";
 
-type AboutPresentationProps = { content: PublicAboutContent | null };
+type AboutPresentationProps = { content: PublicAboutContent | null; tagline?: string };
 
-export function AboutPresentation({ content }: AboutPresentationProps) {
+export function AboutPresentation({ content, tagline = "Inspired by Nature" }: AboutPresentationProps) {
   return (
     <main className="overflow-hidden bg-cream pt-28 text-dark-green sm:pt-32">
       <section className="border-b border-dark-green/10 py-20 sm:py-28 lg:py-32">
@@ -25,7 +25,7 @@ export function AboutPresentation({ content }: AboutPresentationProps) {
         <>
           <section aria-labelledby="about-story-title" className="py-24 sm:py-32 lg:py-40">
             <Container className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-24">
-              <p className="text-xs font-bold tracking-[0.22em] text-palem-green uppercase">Inspired by Nature</p>
+              <p className="text-xs font-bold tracking-[0.22em] text-palem-green uppercase">{tagline}</p>
               <div>
                 <h2 id="about-story-title" className="font-serif text-5xl leading-[0.95] font-semibold tracking-[-0.035em] sm:text-7xl">{content.heading}</h2>
                 {content.supporting_text ? <p className="mt-9 max-w-3xl border-t border-dark-green/12 pt-8 text-base leading-8 text-dark-green/68 sm:text-lg sm:leading-9">{content.supporting_text}</p> : null}
@@ -62,7 +62,7 @@ export function AboutPresentation({ content }: AboutPresentationProps) {
         <section className="py-24 sm:py-32">
           <Container>
             <div className="rounded-lg border border-dashed border-dark-green/20 bg-white px-6 py-16 text-center shadow-soft sm:py-20">
-              <p className="text-xs font-bold tracking-[0.2em] text-palem-green uppercase">Inspired by Nature</p>
+              <p className="text-xs font-bold tracking-[0.2em] text-palem-green uppercase">{tagline}</p>
               <h2 className="mt-4 font-serif text-4xl sm:text-5xl">Our About story is being prepared.</h2>
               <p className="mx-auto mt-5 max-w-xl leading-8 text-dark-green/60">Published brand information will appear here once it has been approved in the CMS.</p>
             </div>

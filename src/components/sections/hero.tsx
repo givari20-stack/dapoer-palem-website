@@ -49,10 +49,7 @@ export function Hero({ content }: { content?: HomepageSectionContent }) {
               </>
             )}
           </h1>
-          <p className="mt-9 max-w-xl text-base leading-8 text-brand-white/75 sm:mt-12 sm:text-lg sm:leading-9">
-            {content?.description ||
-              "A place for shared meals, easy conversation, and time enjoyed in a nature-inspired setting. Final brand copy will be added here."}
-          </p>
+          {content?.description ? <p className="mt-9 max-w-xl text-base leading-8 text-brand-white/75 sm:mt-12 sm:text-lg sm:leading-9">{content.description}</p> : null}
           <div className="mt-9 flex flex-col gap-3 sm:mt-11 sm:flex-row sm:items-center">
             <ButtonLink href={content?.primary_button_url || "/menu"}>
               {content?.primary_button_label || "Explore Menu"}
