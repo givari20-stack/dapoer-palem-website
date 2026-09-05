@@ -20,6 +20,18 @@ export type PublicAboutContent = {
   image_alt: string | null;
 };
 
+export type HomepageSectionContent = {
+  eyebrow?: string | null;
+  heading?: string | null;
+  description?: string | null;
+  primary_button_label?: string | null;
+  primary_button_url?: string | null;
+  secondary_button_label?: string | null;
+  secondary_button_url?: string | null;
+  image_url?: string | null;
+  image_alt?: string | null;
+};
+
 export async function signPublicMedia(
   supabase: Awaited<ReturnType<typeof createClient>>,
   paths: string[],
@@ -100,7 +112,7 @@ export async function getHomepageContent() {
   const signed = await signPublicMedia(supabase, paths);
 
   return {
-    sections: new Map(
+    sections: new Map<string, HomepageSectionContent>(
       sections.map((section) => {
         const media = section.media as unknown as PublicMedia | null;
         return [section.section_key, {

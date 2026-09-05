@@ -1,43 +1,44 @@
 import { Container } from "@/components/layout/container";
 import { ButtonLink } from "@/components/ui/button";
 import { EditorialVisual } from "@/components/ui/editorial-visual";
+import type { HomepageSectionContent } from "@/lib/public-content";
 
-export function Venue() {
+export function Venue({ content }: { content?: HomepageSectionContent }) {
+  const hasSecondaryCta = Boolean(content?.secondary_button_label && content.secondary_button_url);
   return (
     <section aria-labelledby="venue-title" className="bg-cream py-24 sm:py-32 lg:py-40">
       <Container>
         <div className="grid gap-10 lg:grid-cols-[1.28fr_0.72fr] lg:items-end lg:gap-20">
           <EditorialVisual
-            label="Dapoer Palem venue"
-            className="min-h-[28rem] sm:min-h-[38rem] lg:min-h-[46rem]"
+            label={content?.image_alt || "Dapoer Palem venue"}
+            className="min-h-[28rem] bg-cover bg-center sm:min-h-[38rem] lg:min-h-[46rem]"
+            style={content?.image_url ? { backgroundImage: `url(${content.image_url})` } : undefined}
           >
-            <div className="absolute inset-x-8 bottom-8 flex items-end justify-between border-t border-brand-white/20 pt-5 sm:inset-x-10 sm:bottom-10">
+            {!content?.image_url ? <div className="absolute inset-x-8 bottom-8 flex items-end justify-between border-t border-brand-white/20 pt-5 sm:inset-x-10 sm:bottom-10">
               <p className="text-[0.625rem] font-bold tracking-[0.2em] text-gold uppercase">
                 Venue imagery
               </p>
               <p className="text-xs text-brand-white/55">To be supplied</p>
-            </div>
+            </div> : null}
           </EditorialVisual>
 
           <div className="lg:pb-10">
             <p className="mb-5 text-[0.6875rem] font-bold tracking-[0.24em] text-palem-green uppercase">
-              Experience the space
+              {content?.eyebrow || "Experience the space"}
             </p>
             <h2
               id="venue-title"
               className="font-serif text-5xl leading-[0.95] font-semibold tracking-[-0.03em] text-dark-green sm:text-6xl"
             >
-              Room to gather,
-              <span className="block italic text-palem-green">pause, and stay.</span>
+              {content?.heading ? content.heading : <><span>Room to gather,</span><span className="block italic text-palem-green">pause, and stay.</span></>}
             </h2>
             <p className="mt-8 text-base leading-8 text-dark-green/68">
-              This section is prepared for the official venue story and
-              photography. Final details about the space will be added once
-              confirmed.
+              {content?.description || "This section is prepared for the official venue story and photography. Final details about the space will be added once confirmed."}
             </p>
-            <ButtonLink href="/gallery" variant="secondary" className="mt-9">
-              View Gallery
-            </ButtonLink>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <ButtonLink href={content?.primary_button_url || "/gallery"} variant="secondary">{content?.primary_button_label || "View Gallery"}</ButtonLink>
+              {hasSecondaryCta ? <ButtonLink href={content!.secondary_button_url!} variant="secondary">{content!.secondary_button_label}</ButtonLink> : null}
+            </div>
           </div>
         </div>
       </Container>

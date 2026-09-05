@@ -15,19 +15,22 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const content = await getHomepageContent();
   const hero = content.sections.get("hero");
+  const introduction = content.sections.get("introduction");
   const menuCta = content.sections.get("menu_cta");
+  const venue = content.sections.get("venue");
+  const reservationCta = content.sections.get("reservation_cta");
   const location = content.sections.get("location");
   return (
     <>
       <Navbar mode="overlay" />
       <main>
         <Hero content={hero} />
-        <Intro />
+        <Intro content={introduction} />
         <FeaturedExperience experiences={content.experiences.length ? content.experiences : undefined} />
         <MenuCta content={menuCta} />
-        <Venue />
+        <Venue content={venue} />
         <UpdatesPreview promo={content.promo} event={content.event} />
-        <ReservationCta />
+        <ReservationCta content={reservationCta} />
         <Location content={location} />
       </main>
       <Footer />

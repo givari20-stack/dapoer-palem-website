@@ -1,20 +1,9 @@
 import { Container } from "@/components/layout/container";
 import { Button, ButtonLink } from "@/components/ui/button";
+import type { HomepageSectionContent } from "@/lib/public-content";
 import { getPublicSettings, parseOpeningHours } from "@/lib/settings/public";
 
-type LocationContent = {
-  eyebrow?: string | null;
-  heading?: string | null;
-  description?: string | null;
-  primary_button_label?: string | null;
-  primary_button_url?: string | null;
-  secondary_button_label?: string | null;
-  secondary_button_url?: string | null;
-  image_url?: string | null;
-  image_alt?: string | null;
-};
-
-export async function Location({ content }: { content?: LocationContent }) {
+export async function Location({ content }: { content?: HomepageSectionContent }) {
   const settings = await getPublicSettings();
   const hours = parseOpeningHours(settings.opening_hours);
   const hasPrimaryCta = Boolean(content?.primary_button_label && content.primary_button_url);

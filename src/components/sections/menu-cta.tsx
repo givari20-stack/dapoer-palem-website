@@ -1,11 +1,16 @@
 import { Container } from "@/components/layout/container";
 import { ButtonLink } from "@/components/ui/button";
+import type { HomepageSectionContent } from "@/lib/public-content";
 
-type MenuCtaContent = { eyebrow?: string | null; heading?: string | null; description?: string | null; primary_button_label?: string | null; primary_button_url?: string | null };
-
-export function MenuCta({ content }: { content?: MenuCtaContent }) {
+export function MenuCta({ content }: { content?: HomepageSectionContent }) {
+  const hasSecondaryCta = Boolean(content?.secondary_button_label && content.secondary_button_url);
   return (
-    <section aria-labelledby="menu-title" className="relative overflow-hidden bg-dark-green py-24 text-brand-white sm:py-32 lg:py-40">
+    <section
+      aria-labelledby="menu-title"
+      className="relative overflow-hidden bg-dark-green bg-cover bg-center py-24 text-brand-white sm:py-32 lg:py-40"
+      style={content?.image_url ? { backgroundImage: `url(${content.image_url})` } : undefined}
+    >
+      {content?.image_url ? <div aria-hidden="true" className="absolute inset-0 bg-dark-green/85" /> : null}
       <div
         aria-hidden="true"
         className="absolute -right-40 top-1/2 aspect-square w-[34rem] -translate-y-1/2 rounded-full border border-brand-white/10 sm:w-[46rem]"
@@ -26,9 +31,10 @@ export function MenuCta({ content }: { content?: MenuCtaContent }) {
           <p className="max-w-md text-base leading-8 text-brand-white/70">
             {content?.description || "The complete Dapoer Palem menu will be presented here once its official dishes and details are supplied."}
           </p>
-          <ButtonLink href={content?.primary_button_url || "/menu"} className="mt-8">
-            {content?.primary_button_label || "Explore Menu"}
-          </ButtonLink>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <ButtonLink href={content?.primary_button_url || "/menu"}>{content?.primary_button_label || "Explore Menu"}</ButtonLink>
+            {hasSecondaryCta ? <ButtonLink href={content!.secondary_button_url!} variant="ghost" className="border-brand-white/25 text-brand-white hover:border-brand-white/50 hover:bg-brand-white/10">{content!.secondary_button_label}</ButtonLink> : null}
+          </div>
         </div>
       </Container>
     </section>

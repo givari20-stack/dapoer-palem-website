@@ -1,18 +1,8 @@
 import { Container } from "@/components/layout/container";
 import { ButtonLink } from "@/components/ui/button";
+import type { HomepageSectionContent } from "@/lib/public-content";
 
-type HeroContent = {
-  eyebrow?: string | null;
-  heading?: string | null;
-  description?: string | null;
-  primary_button_label?: string | null;
-  primary_button_url?: string | null;
-  secondary_button_label?: string | null;
-  secondary_button_url?: string | null;
-  image_url?: string | null;
-};
-
-export function Hero({ content }: { content?: HeroContent }) {
+export function Hero({ content }: { content?: HomepageSectionContent }) {
   return (
     <section
       aria-labelledby="hero-title"
