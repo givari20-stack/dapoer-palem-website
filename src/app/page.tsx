@@ -16,6 +16,7 @@ export default async function Home() {
   const content = await getHomepageContent();
   const hero = content.sections.get("hero");
   const menuCta = content.sections.get("menu_cta");
+  const location = content.sections.get("location");
   return (
     <>
       <Navbar mode="overlay" />
@@ -27,7 +28,7 @@ export default async function Home() {
         <Venue />
         <UpdatesPreview promo={content.promo} event={content.event} />
         <ReservationCta />
-        <Location />
+        <Location content={location} />
       </main>
       <Footer />
     </>
