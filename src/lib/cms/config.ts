@@ -18,7 +18,15 @@ export type CmsFieldKind =
   | "time"
   | "datetime-local"
   | "media"
-  | "relation";
+  | "relation"
+  | "repeatable";
+
+export type CmsRepeatableItemField = {
+  name: "name" | "description" | "url";
+  label: string;
+  kind: "text" | "textarea" | "url";
+  required?: boolean;
+};
 
 export type CmsField = {
   name: string;
@@ -30,6 +38,8 @@ export type CmsField = {
   step?: string;
   min?: number;
   maxLength?: number;
+  maxItems?: number;
+  itemFields?: readonly CmsRepeatableItemField[];
 };
 
 export type CmsModuleConfig = {
@@ -53,7 +63,7 @@ export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
     table: "about_content",
     title: "About Page",
     singular: "about page",
-    description: "Manage the fixed About page story, image, and call to action.",
+    description: "Manage the fixed About page story, structured editorial sections, media, SEO, and call to action.",
     titleField: "heading",
     statusField: "status",
     statuses: generalStatuses,
@@ -62,10 +72,41 @@ export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
       { name: "eyebrow", label: "Eyebrow", kind: "text" },
       { name: "heading", label: "Heading", kind: "text", required: true },
       { name: "description", label: "Description", kind: "textarea" },
-      { name: "supporting_text", label: "Supporting text", kind: "textarea" },
-      { name: "image_media_id", label: "Selected media", kind: "media" },
+      { name: "supporting_text", label: "Overview paragraphs", kind: "textarea" },
+      { name: "overview_heading", label: "Overview heading", kind: "text" },
+      { name: "vision_heading", label: "Vision heading", kind: "text" },
+      { name: "vision_description", label: "Vision description", kind: "textarea" },
+      { name: "mission_heading", label: "Mission heading", kind: "text" },
+      { name: "mission_items", label: "Mission items", kind: "repeatable", maxItems: 7, itemFields: [
+        { name: "name", label: "Name", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+      ] },
+      { name: "image_media_id", label: "Hero / overview media", kind: "media" },
+      { name: "founder_heading", label: "Founder heading", kind: "text" },
+      { name: "founder_name", label: "Founder name", kind: "text" },
+      { name: "founder_role", label: "Founder role", kind: "text" },
+      { name: "founder_description", label: "Founder description", kind: "textarea" },
+      { name: "founder_image_media_id", label: "Founder media", kind: "media" },
+      { name: "brand_identity_heading", label: "Brand Identity heading", kind: "text" },
+      { name: "brand_identity_description", label: "Brand Identity description", kind: "textarea" },
+      { name: "audience_heading", label: "Audience heading", kind: "text" },
+      { name: "audience_description", label: "Audience description", kind: "textarea" },
+      { name: "offerings_heading", label: "Offerings heading", kind: "text" },
+      { name: "offerings_items", label: "Offering items", kind: "repeatable", itemFields: [
+        { name: "name", label: "Name", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+      ] },
+      { name: "service_channels_heading", label: "Service Channels heading", kind: "text" },
+      { name: "service_channels_items", label: "Service channel items", kind: "repeatable", itemFields: [
+        { name: "name", label: "Name", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+        { name: "url", label: "URL", kind: "url" },
+      ] },
       { name: "cta_label", label: "CTA label", kind: "text" },
       { name: "cta_url", label: "CTA URL", kind: "text" },
+      { name: "seo_title", label: "SEO title", kind: "text" },
+      { name: "seo_description", label: "SEO description", kind: "textarea" },
+      { name: "seo_image_media_id", label: "SEO Open Graph media", kind: "media" },
       { name: "active", label: "Active", kind: "checkbox" },
       { name: "status", label: "Status", kind: "select", required: true, options: generalStatuses },
     ],

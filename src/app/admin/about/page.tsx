@@ -6,5 +6,5 @@ export const metadata: Metadata = { title: "About CMS", robots: { index: false, 
 export const dynamic = "force-dynamic";
 
 export default function AdminAboutPage() {
-  return <CmsModulePage title="About" description="Manage the approved About story, supporting copy, Media Library image, and call to action. The page layout remains fixed in code." moduleKeys={["about-content"]} />;
+  return <CmsModulePage title="About" description="Manage the approved About story, structured sections, Media Library images, page-specific SEO, and call to action. The page layout remains fixed in code." moduleKeys={["about-content"]} />;
 }

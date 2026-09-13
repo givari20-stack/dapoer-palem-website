@@ -445,7 +445,11 @@ function CmsInput({
       ? mediaOptions
       : field.kind === "relation"
         ? relationOptions[field.relationKey ?? ""] ?? []
-        : field.options?.map((option) => ({ value: option, label: option.replaceAll("_", " ") })) ?? [];
+      : field.options?.map((option) => ({ value: option, label: option.replaceAll("_", " ") })) ?? [];
+
+  if (field.kind === "repeatable") {
+    return <RepeatableInput field={field} value={value} />;
+  }
 
   if (field.kind === "checkbox") {
     return (
@@ -506,6 +510,53 @@ function CmsInput({
       />
     </label>
   );
+}
+
+function RepeatableInput({ field, value }: { field: CmsField; value: unknown }) {
+  const [items, setItems] = useState<Record<string, string>[]>(() => parseRepeatableValue(value));
+  const canAdd = field.maxItems === undefined || items.length < field.maxItems;
+
+  function update(index: number, name: string, nextValue: string) {
+    setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [name]: nextValue } : item));
+  }
+
+  return (
+    <fieldset className="rounded-lg border border-dark-green/15 p-4 sm:col-span-2">
+      <legend className="px-2 text-sm font-semibold">{field.label}</legend>
+      <input type="hidden" name={field.name} value={JSON.stringify(items)} />
+      <div className="grid gap-4">
+        {items.map((item, index) => (
+          <div key={index} className="grid gap-4 rounded-md bg-cream/60 p-4 sm:grid-cols-2">
+            {(field.itemFields ?? []).map((itemField) => (
+              <label key={itemField.name} className={itemField.kind === "textarea" ? "sm:col-span-2" : undefined}>
+                <span className="mb-2 block text-xs font-semibold">{itemField.label}{itemField.required ? " *" : ""}</span>
+                {itemField.kind === "textarea" ? (
+                  <textarea value={item[itemField.name] ?? ""} onChange={(event) => update(index, itemField.name, event.target.value)} required={itemField.required} rows={3} className="w-full rounded-md border border-dark-green/20 bg-white px-3 py-3" />
+                ) : (
+                  <input type={itemField.kind} value={item[itemField.name] ?? ""} onChange={(event) => update(index, itemField.name, event.target.value)} required={itemField.required} className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3" />
+                )}
+              </label>
+            ))}
+            <button type="button" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="justify-self-start text-xs font-bold tracking-wide text-red-800 uppercase">Remove item</button>
+          </div>
+        ))}
+        {!items.length ? <p className="text-sm text-dark-green/55">No items added.</p> : null}
+        <button type="button" disabled={!canAdd} onClick={() => setItems((current) => [...current, {}])} className="justify-self-start rounded-full border border-dark-green/20 px-4 py-2 text-xs font-bold uppercase disabled:opacity-40">Add item</button>
+        {field.maxItems !== undefined ? <p className="text-xs text-dark-green/50">Maximum {field.maxItems} items.</p> : null}
+      </div>
+    </fieldset>
+  );
+}
+
+function parseRepeatableValue(value: unknown): Record<string, string>[] {
+  let parsed = value;
+  if (typeof value === "string") {
+    try { parsed = JSON.parse(value); } catch { return []; }
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.flatMap((item) => item && typeof item === "object" && !Array.isArray(item)
+    ? [Object.fromEntries(Object.entries(item).filter((entry): entry is [string, string] => typeof entry[1] === "string"))]
+    : []);
 }
 
 function categoryItemCount(item: CmsRecord) {

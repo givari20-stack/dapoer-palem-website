@@ -14,10 +14,39 @@ export type PublicAboutContent = {
   heading: string;
   description: string | null;
   supporting_text: string | null;
+  overview_heading: string | null;
+  vision_heading: string | null;
+  vision_description: string | null;
+  mission_heading: string | null;
+  mission_items: AboutContentItem[];
+  founder_heading: string | null;
+  founder_name: string | null;
+  founder_role: string | null;
+  founder_description: string | null;
+  founder_image_url: string | null;
+  founder_image_alt: string | null;
+  brand_identity_heading: string | null;
+  brand_identity_description: string | null;
+  audience_heading: string | null;
+  audience_description: string | null;
+  offerings_heading: string | null;
+  offerings_items: AboutContentItem[];
+  service_channels_heading: string | null;
+  service_channels_items: AboutContentItem[];
   cta_label: string | null;
   cta_url: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_image_url: string | null;
+  seo_image_alt: string | null;
   image_url: string | null;
   image_alt: string | null;
+};
+
+export type AboutContentItem = {
+  name: string;
+  description: string;
+  url?: string;
 };
 
 export type HomepageSectionContent = {
@@ -45,7 +74,7 @@ export async function getAboutContent(): Promise<PublicAboutContent | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("about_content")
-    .select("*,media:image_media_id(storage_path,alt_text,title)")
+    .select("*,media:image_media_id(storage_path,alt_text,title),founder_media:founder_image_media_id(storage_path,alt_text,title),seo_media:seo_image_media_id(storage_path,alt_text,title)")
     .eq("status", "published")
     .eq("active", true)
     .maybeSingle();
@@ -53,9 +82,9 @@ export async function getAboutContent(): Promise<PublicAboutContent | null> {
   if (!data) return null;
 
   const media = data.media as unknown as PublicMedia | null;
-  const signed = media
-    ? await signPublicMedia(supabase, [media.storage_path])
-    : new Map<string, string>();
+  const founderMedia = data.founder_media as unknown as PublicMedia | null;
+  const seoMedia = data.seo_media as unknown as PublicMedia | null;
+  const signed = await signPublicMedia(supabase, [media, founderMedia, seoMedia].flatMap((item) => item?.storage_path ? [item.storage_path] : []));
 
   return {
     id: data.id,
@@ -63,11 +92,48 @@ export async function getAboutContent(): Promise<PublicAboutContent | null> {
     heading: data.heading,
     description: data.description,
     supporting_text: data.supporting_text,
+    overview_heading: data.overview_heading,
+    vision_heading: data.vision_heading,
+    vision_description: data.vision_description,
+    mission_heading: data.mission_heading,
+    mission_items: parseAboutItems(data.mission_items),
+    founder_heading: data.founder_heading,
+    founder_name: data.founder_name,
+    founder_role: data.founder_role,
+    founder_description: data.founder_description,
+    founder_image_url: founderMedia ? signed.get(founderMedia.storage_path) ?? null : null,
+    founder_image_alt: founderMedia?.alt_text ?? founderMedia?.title ?? null,
+    brand_identity_heading: data.brand_identity_heading,
+    brand_identity_description: data.brand_identity_description,
+    audience_heading: data.audience_heading,
+    audience_description: data.audience_description,
+    offerings_heading: data.offerings_heading,
+    offerings_items: parseAboutItems(data.offerings_items),
+    service_channels_heading: data.service_channels_heading,
+    service_channels_items: parseAboutItems(data.service_channels_items),
     cta_label: data.cta_label,
     cta_url: data.cta_url,
+    seo_title: data.seo_title,
+    seo_description: data.seo_description,
+    seo_image_url: seoMedia ? signed.get(seoMedia.storage_path) ?? null : null,
+    seo_image_alt: seoMedia?.alt_text ?? seoMedia?.title ?? null,
     image_url: media ? signed.get(media.storage_path) ?? null : null,
     image_alt: media?.alt_text ?? media?.title ?? null,
   };
+}
+
+export function parseAboutItems(value: unknown): AboutContentItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const record = item as Record<string, unknown>;
+    if (typeof record.name !== "string" || typeof record.description !== "string") return [];
+    return [{
+      name: record.name,
+      description: record.description,
+      ...(typeof record.url === "string" && record.url ? { url: record.url } : {}),
+    }];
+  });
 }
 
 export async function getHomepageContent() {

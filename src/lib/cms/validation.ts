@@ -22,6 +22,41 @@ export function validateCmsValues(
   for (const field of config.fields) {
     const raw = source[field.name];
 
+    if (field.kind === "repeatable") {
+      let items: unknown = raw === null || raw === undefined || raw === "" ? [] : raw;
+      if (typeof raw === "string") {
+        try { items = JSON.parse(raw); } catch {
+          return { ok: false, message: `${field.label} is invalid.` };
+        }
+      }
+      if (!Array.isArray(items)) return { ok: false, message: `${field.label} must be a list.` };
+      if (field.maxItems !== undefined && items.length > field.maxItems) {
+        return { ok: false, message: `${field.label} supports up to ${field.maxItems} items.` };
+      }
+      const normalized: Record<string, string>[] = [];
+      for (const [index, item] of items.entries()) {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          return { ok: false, message: `${field.label} item ${index + 1} is invalid.` };
+        }
+        const sourceItem = item as Record<string, unknown>;
+        const normalizedItem: Record<string, string> = {};
+        for (const itemField of field.itemFields ?? []) {
+          const rawItemValue = sourceItem[itemField.name];
+          const text = typeof rawItemValue === "string" ? rawItemValue.trim() : "";
+          if (itemField.required && !text) {
+            return { ok: false, message: `${field.label} item ${index + 1} ${itemField.label.toLocaleLowerCase()} is required.` };
+          }
+          if (text && itemField.kind === "url" && !isSafeUrl(text)) {
+            return { ok: false, message: `${field.label} item ${index + 1} URL must be relative or HTTPS.` };
+          }
+          if (text) normalizedItem[itemField.name] = text;
+        }
+        normalized.push(normalizedItem);
+      }
+      values[field.name] = normalized;
+      continue;
+    }
+
     if (field.kind === "checkbox") {
       values[field.name] = raw === true;
       continue;
