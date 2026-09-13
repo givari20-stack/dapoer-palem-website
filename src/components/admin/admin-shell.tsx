@@ -17,6 +17,7 @@ const navigation = [
   { label: "Reservations", href: "/admin/reservations", enabled: true },
   { label: "Settings", href: "/admin/settings", enabled: true },
   { label: "Activity", href: "/admin/activity", enabled: true },
+  { label: "Dapoer Palem OS", href: "/os", enabled: true },
 ] as const;
 
 type AdminShellProps = {

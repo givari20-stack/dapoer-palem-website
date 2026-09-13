@@ -32,6 +32,7 @@ export const settingDefinitions: SettingDefinition[] = [
   { key: "og_description", label: "Open Graph description", group: "seo", kind: "textarea" },
   { key: "og_image", label: "Open Graph image", group: "seo", kind: "media" },
   { key: "favicon_media_id", label: "Favicon", group: "seo", kind: "media" },
+  { key: "site_url", label: "Canonical site URL", group: "seo", kind: "url", description: "Production origin used by canonical metadata, robots, and sitemap." },
 ];
 
 export const settingDefinitionMap = new Map(settingDefinitions.map((item) => [item.key, item]));

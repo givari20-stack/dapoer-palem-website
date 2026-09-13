@@ -5,6 +5,19 @@ import type { Metadata } from "next";
 
 export type PublicSettings = Record<string, string>;
 
+export function getSiteOrigin(settings: PublicSettings = {}) {
+  const candidate = settings.site_url
+    || process.env.NEXT_PUBLIC_SITE_URL
+    || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "")
+    || "http://localhost:3000";
+  try {
+    const url = new URL(candidate);
+    return url.origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
 export async function getPublicSettings(): Promise<PublicSettings> {
   const supabase = await createClient();
   const { data } = await supabase.from("site_settings").select("setting_key,setting_value").eq("is_public", true);
@@ -37,6 +50,8 @@ export async function getConfiguredMetadata(): Promise<Partial<Metadata>> {
     }
   }
   return {
+    metadataBase: new URL(getSiteOrigin(settings)),
+    alternates: { canonical: "/" },
     ...(settings.site_title ? { title: settings.site_title } : {}),
     ...(settings.meta_description ? { description: settings.meta_description } : {}),
     openGraph: {

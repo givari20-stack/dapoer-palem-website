@@ -513,10 +513,10 @@ function CmsInput({
 }
 
 function RepeatableInput({ field, value }: { field: CmsField; value: unknown }) {
-  const [items, setItems] = useState<Record<string, string>[]>(() => parseRepeatableValue(value));
+  const [items, setItems] = useState<Record<string, string | number | boolean>[]>(() => parseRepeatableValue(value));
   const canAdd = field.maxItems === undefined || items.length < field.maxItems;
 
-  function update(index: number, name: string, nextValue: string) {
+  function update(index: number, name: string, nextValue: string | number | boolean) {
     setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [name]: nextValue } : item));
   }
 
@@ -530,10 +530,12 @@ function RepeatableInput({ field, value }: { field: CmsField; value: unknown }) 
             {(field.itemFields ?? []).map((itemField) => (
               <label key={itemField.name} className={itemField.kind === "textarea" ? "sm:col-span-2" : undefined}>
                 <span className="mb-2 block text-xs font-semibold">{itemField.label}{itemField.required ? " *" : ""}</span>
-                {itemField.kind === "textarea" ? (
-                  <textarea value={item[itemField.name] ?? ""} onChange={(event) => update(index, itemField.name, event.target.value)} required={itemField.required} rows={3} className="w-full rounded-md border border-dark-green/20 bg-white px-3 py-3" />
+                {itemField.kind === "checkbox" ? (
+                  <input type="checkbox" checked={item[itemField.name] === true} onChange={(event) => update(index, itemField.name, event.target.checked)} className="size-4 accent-palem-green" />
+                ) : itemField.kind === "textarea" ? (
+                  <textarea value={String(item[itemField.name] ?? "")} onChange={(event) => update(index, itemField.name, event.target.value)} required={itemField.required} rows={3} className="w-full rounded-md border border-dark-green/20 bg-white px-3 py-3" />
                 ) : (
-                  <input type={itemField.kind} value={item[itemField.name] ?? ""} onChange={(event) => update(index, itemField.name, event.target.value)} required={itemField.required} className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3" />
+                  <input type={itemField.kind} value={String(item[itemField.name] ?? "")} onChange={(event) => update(index, itemField.name, itemField.kind === "number" ? Number(event.target.value) : event.target.value)} required={itemField.required} min={itemField.kind === "number" ? 0 : undefined} className="min-h-12 w-full rounded-md border border-dark-green/20 bg-white px-3" />
                 )}
               </label>
             ))}
@@ -548,14 +550,14 @@ function RepeatableInput({ field, value }: { field: CmsField; value: unknown }) 
   );
 }
 
-function parseRepeatableValue(value: unknown): Record<string, string>[] {
+function parseRepeatableValue(value: unknown): Record<string, string | number | boolean>[] {
   let parsed = value;
   if (typeof value === "string") {
     try { parsed = JSON.parse(value); } catch { return []; }
   }
   if (!Array.isArray(parsed)) return [];
   return parsed.flatMap((item) => item && typeof item === "object" && !Array.isArray(item)
-    ? [Object.fromEntries(Object.entries(item).filter((entry): entry is [string, string] => typeof entry[1] === "string"))]
+    ? [Object.fromEntries(Object.entries(item).filter((entry): entry is [string, string | number | boolean] => ["string", "number", "boolean"].includes(typeof entry[1])))]
     : []);
 }
 

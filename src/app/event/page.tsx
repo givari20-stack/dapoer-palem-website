@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CollectionPage } from "@/components/public/collection-page";
 import { getPublicCollection } from "@/lib/public-content";
-export const metadata: Metadata = { title: "Events", description: "Published Dapoer Palem events." };
+export const metadata: Metadata = { title: "Events", description: "Published Dapoer Palem events.", alternates: { canonical: "/event" } };
 export const dynamic = "force-dynamic";
 export default async function EventPage() {
   const records = await getPublicCollection("events");

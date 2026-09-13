@@ -32,9 +32,32 @@ building blocks live in `src/components`, while static brand assets belong in
 - `/admin/reservations`
 - `/admin/settings`
 
-Public-site UI remains separate from the protected `/admin` surface so their
-layouts, access rules, and dependencies can evolve safely. A future `/os`
-surface is not currently implemented.
+## Implemented OS routes
+
+- `/os`
+- `/os/projects`
+- `/os/tasks`
+- `/os/campaigns`
+- `/os/content`
+- `/os/calendar`
+- `/os/reports`
+- `/os/analytics`
+- `/os/team`
+- `/os/knowledge`
+- `/os/roadmap`
+- `/os/assistant`
+
+Public-site UI remains separate from both protected workspaces. `/admin` owns
+CMS, reservation, media, settings, revision, and audit workflows. `/os` owns
+internal project, task, campaign, content, reporting, knowledge, team, roadmap,
+calendar, analytics, and decision-support workflows. Both protected surfaces
+reuse Supabase Auth roles and server-enforced RLS.
+
+The OS schema is introduced by append-only migration
+`012_dapoer_palem_os.sql`. It uses UUID primary keys, permanent server-generated
+public IDs for projects/tasks/subtasks, Media Library references, and the
+existing audit log. Empty operational datasets remain empty; the application
+does not seed illustrative projects, metrics, people, or processes.
 
 ## Brand assets
 

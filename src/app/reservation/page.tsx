@@ -6,7 +6,7 @@ import { ReservationForm } from "@/components/reservation/reservation-form";
 import { getPublicSettings } from "@/lib/settings/public";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Reservation", description: "Submit a reservation request to Dapoer Palem." };
+export const metadata: Metadata = { title: "Reservation", description: "Submit a reservation request to Dapoer Palem.", alternates: { canonical: "/reservation" } };
 
 export default async function ReservationPage() {
   const settings = await getPublicSettings();

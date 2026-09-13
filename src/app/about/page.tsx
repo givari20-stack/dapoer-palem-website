@@ -12,9 +12,10 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(_: PageProps<"/about">, parent: ResolvingMetadata): Promise<Metadata> {
   const content = await getAboutContent();
-  if (!content?.seo_title && !content?.seo_description && !content?.seo_image_url) return {};
+  if (!content?.seo_title && !content?.seo_description && !content?.seo_image_url) return { alternates: { canonical: "/about" } };
   const inherited = await parent;
   return {
+    alternates: { canonical: "/about" },
     ...(content.seo_title ? { title: content.seo_title } : {}),
     ...(content.seo_description ? { description: content.seo_description } : {}),
     openGraph: {

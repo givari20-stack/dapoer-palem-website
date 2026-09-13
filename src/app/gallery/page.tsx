@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CollectionPage } from "@/components/public/collection-page";
 import { getPublicCollection } from "@/lib/public-content";
-export const metadata: Metadata = { title: "Gallery", description: "Published Dapoer Palem gallery." };
+export const metadata: Metadata = { title: "Gallery", description: "Published Dapoer Palem gallery.", alternates: { canonical: "/gallery" } };
 export const dynamic = "force-dynamic";
 export default async function GalleryPage() {
   const records = await getPublicCollection("gallery_items");

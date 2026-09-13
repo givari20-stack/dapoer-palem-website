@@ -4,7 +4,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { MenuPresentation } from "@/components/public/menu-presentation";
 import { getPublicMenu } from "@/lib/public-content";
 
-export const metadata: Metadata = { title: "Menu", description: "Published Dapoer Palem menu." };
+export const metadata: Metadata = { title: "Menu", description: "Published Dapoer Palem menu.", alternates: { canonical: "/menu" } };
 export const dynamic = "force-dynamic";
 
 export default async function MenuPage() {

@@ -15,6 +15,8 @@ export type PublicAboutContent = {
   description: string | null;
   supporting_text: string | null;
   overview_heading: string | null;
+  story_heading: string | null;
+  story_description: string | null;
   vision_heading: string | null;
   vision_description: string | null;
   mission_heading: string | null;
@@ -27,12 +29,27 @@ export type PublicAboutContent = {
   founder_image_alt: string | null;
   brand_identity_heading: string | null;
   brand_identity_description: string | null;
+  brand_identity_values: AboutContentItem[];
   audience_heading: string | null;
   audience_description: string | null;
+  audience_items: AboutContentItem[];
+  business_concept_heading: string | null;
+  business_concept_description: string | null;
+  business_concept_items: AboutContentItem[];
   offerings_heading: string | null;
   offerings_items: AboutContentItem[];
   service_channels_heading: string | null;
   service_channels_items: AboutContentItem[];
+  journey_heading: string | null;
+  journey_items: AboutContentItem[];
+  operations_heading: string | null;
+  operations_description: string | null;
+  production_flow_heading: string | null;
+  production_flow_items: AboutContentItem[];
+  customer_flow_heading: string | null;
+  customer_flow_items: AboutContentItem[];
+  location_heading: string | null;
+  location_description: string | null;
   cta_label: string | null;
   cta_url: string | null;
   seo_title: string | null;
@@ -47,6 +64,10 @@ export type AboutContentItem = {
   name: string;
   description: string;
   url?: string;
+  role?: string;
+  order?: number;
+  active?: boolean;
+  date?: string;
 };
 
 export type HomepageSectionContent = {
@@ -93,6 +114,8 @@ export async function getAboutContent(): Promise<PublicAboutContent | null> {
     description: data.description,
     supporting_text: data.supporting_text,
     overview_heading: data.overview_heading,
+    story_heading: data.story_heading,
+    story_description: data.story_description,
     vision_heading: data.vision_heading,
     vision_description: data.vision_description,
     mission_heading: data.mission_heading,
@@ -105,12 +128,27 @@ export async function getAboutContent(): Promise<PublicAboutContent | null> {
     founder_image_alt: founderMedia?.alt_text ?? founderMedia?.title ?? null,
     brand_identity_heading: data.brand_identity_heading,
     brand_identity_description: data.brand_identity_description,
+    brand_identity_values: parseAboutItems(data.brand_identity_values),
     audience_heading: data.audience_heading,
     audience_description: data.audience_description,
+    audience_items: parseAboutItems(data.audience_items),
+    business_concept_heading: data.business_concept_heading,
+    business_concept_description: data.business_concept_description,
+    business_concept_items: parseAboutItems(data.business_concept_items),
     offerings_heading: data.offerings_heading,
     offerings_items: parseAboutItems(data.offerings_items),
     service_channels_heading: data.service_channels_heading,
     service_channels_items: parseAboutItems(data.service_channels_items),
+    journey_heading: data.journey_heading,
+    journey_items: parseAboutItems(data.journey_items),
+    operations_heading: data.operations_heading,
+    operations_description: data.operations_description,
+    production_flow_heading: data.production_flow_heading,
+    production_flow_items: parseAboutItems(data.production_flow_items),
+    customer_flow_heading: data.customer_flow_heading,
+    customer_flow_items: parseAboutItems(data.customer_flow_items),
+    location_heading: data.location_heading,
+    location_description: data.location_description,
     cta_label: data.cta_label,
     cta_url: data.cta_url,
     seo_title: data.seo_title,
@@ -127,11 +165,15 @@ export function parseAboutItems(value: unknown): AboutContentItem[] {
   return value.flatMap((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return [];
     const record = item as Record<string, unknown>;
-    if (typeof record.name !== "string" || typeof record.description !== "string") return [];
+    if (typeof record.name !== "string") return [];
     return [{
       name: record.name,
-      description: record.description,
+      description: typeof record.description === "string" ? record.description : "",
       ...(typeof record.url === "string" && record.url ? { url: record.url } : {}),
+      ...(typeof record.role === "string" && record.role ? { role: record.role } : {}),
+      ...(typeof record.order === "number" && Number.isFinite(record.order) ? { order: record.order } : {}),
+      ...(typeof record.active === "boolean" ? { active: record.active } : {}),
+      ...(typeof record.date === "string" && record.date ? { date: record.date } : {}),
     }];
   });
 }

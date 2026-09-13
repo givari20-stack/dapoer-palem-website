@@ -33,15 +33,25 @@ export function validateCmsValues(
       if (field.maxItems !== undefined && items.length > field.maxItems) {
         return { ok: false, message: `${field.label} supports up to ${field.maxItems} items.` };
       }
-      const normalized: Record<string, string>[] = [];
+      const normalized: Record<string, unknown>[] = [];
       for (const [index, item] of items.entries()) {
         if (!item || typeof item !== "object" || Array.isArray(item)) {
           return { ok: false, message: `${field.label} item ${index + 1} is invalid.` };
         }
         const sourceItem = item as Record<string, unknown>;
-        const normalizedItem: Record<string, string> = {};
+        const normalizedItem: Record<string, unknown> = {};
         for (const itemField of field.itemFields ?? []) {
           const rawItemValue = sourceItem[itemField.name];
+          if (itemField.kind === "checkbox") {
+            normalizedItem[itemField.name] = rawItemValue === true;
+            continue;
+          }
+          if (itemField.kind === "number") {
+            const numberValue = typeof rawItemValue === "number" ? rawItemValue : Number(rawItemValue);
+            if (!Number.isFinite(numberValue) || numberValue < 0) return { ok: false, message: `${field.label} item ${index + 1} ${itemField.label.toLocaleLowerCase()} is invalid.` };
+            normalizedItem[itemField.name] = numberValue;
+            continue;
+          }
           const text = typeof rawItemValue === "string" ? rawItemValue.trim() : "";
           if (itemField.required && !text) {
             return { ok: false, message: `${field.label} item ${index + 1} ${itemField.label.toLocaleLowerCase()} is required.` };
@@ -49,6 +59,7 @@ export function validateCmsValues(
           if (text && itemField.kind === "url" && !isSafeUrl(text)) {
             return { ok: false, message: `${field.label} item ${index + 1} URL must be relative or HTTPS.` };
           }
+          if (text && itemField.kind === "date" && Number.isNaN(Date.parse(`${text}T00:00:00Z`))) return { ok: false, message: `${field.label} item ${index + 1} date is invalid.` };
           if (text) normalizedItem[itemField.name] = text;
         }
         normalized.push(normalizedItem);

@@ -1,0 +1,35 @@
+warning: in the working copy of 'docs/architecture.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/about/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/contact/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/event/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/gallery/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/menu/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/preview/about-content/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/promo/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/reservation/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/admin/admin-shell.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/admin/cms-manager.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/public/about-presentation.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/cms/config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/cms/validation.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/public-content.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/settings/config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/settings/public.ts', LF will be replaced by CRLF the next time Git touches it
+ docs/architecture.md                         | 29 [32m++++++++++++++++[m[31m--[m
+ src/app/about/page.tsx                       |  3 [32m+[m[31m-[m
+ src/app/contact/page.tsx                     |  2 [32m+[m[31m-[m
+ src/app/event/page.tsx                       |  2 [32m+[m[31m-[m
+ src/app/gallery/page.tsx                     |  2 [32m+[m[31m-[m
+ src/app/menu/page.tsx                        |  2 [32m+[m[31m-[m
+ src/app/preview/about-content/[id]/page.tsx  | 17 [32m++++++++++[m
+ src/app/promo/page.tsx                       |  2 [32m+[m[31m-[m
+ src/app/reservation/page.tsx                 |  2 [32m+[m[31m-[m
+ src/components/admin/admin-shell.tsx         |  1 [32m+[m
+ src/components/admin/cms-manager.tsx         | 16 [32m+++++[m[31m-----[m
+ src/components/public/about-presentation.tsx | 30 [32m+++++++++++++++[m[31m---[m
+ src/lib/cms/config.ts                        | 46 [32m++++++++++++++++++++++++++[m[31m--[m
+ src/lib/cms/validation.ts                    | 15 [32m+++++++[m[31m--[m
+ src/lib/public-content.ts                    | 46 [32m++++++++++++++++++++++++++[m[31m--[m
+ src/lib/settings/config.ts                   |  1 [32m+[m
+ src/lib/settings/public.ts                   | 15 [32m+++++++++[m
+ 17 files changed, 203 insertions(+), 28 deletions(-)

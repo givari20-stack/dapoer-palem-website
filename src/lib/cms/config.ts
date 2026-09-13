@@ -22,9 +22,9 @@ export type CmsFieldKind =
   | "repeatable";
 
 export type CmsRepeatableItemField = {
-  name: "name" | "description" | "url";
+  name: string;
   label: string;
-  kind: "text" | "textarea" | "url";
+  kind: "text" | "textarea" | "url" | "number" | "checkbox" | "date";
   required?: boolean;
 };
 
@@ -74,6 +74,8 @@ export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
       { name: "description", label: "Description", kind: "textarea" },
       { name: "supporting_text", label: "Overview paragraphs", kind: "textarea" },
       { name: "overview_heading", label: "Overview heading", kind: "text" },
+      { name: "story_heading", label: "Brand story heading", kind: "text" },
+      { name: "story_description", label: "Brand story", kind: "textarea" },
       { name: "vision_heading", label: "Vision heading", kind: "text" },
       { name: "vision_description", label: "Vision description", kind: "textarea" },
       { name: "mission_heading", label: "Mission heading", kind: "text" },
@@ -89,8 +91,22 @@ export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
       { name: "founder_image_media_id", label: "Founder media", kind: "media" },
       { name: "brand_identity_heading", label: "Brand Identity heading", kind: "text" },
       { name: "brand_identity_description", label: "Brand Identity description", kind: "textarea" },
+      { name: "brand_identity_values", label: "Brand values", kind: "repeatable", itemFields: [
+        { name: "name", label: "Name", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+      ] },
       { name: "audience_heading", label: "Audience heading", kind: "text" },
       { name: "audience_description", label: "Audience description", kind: "textarea" },
+      { name: "audience_items", label: "Audience segments", kind: "repeatable", itemFields: [
+        { name: "name", label: "Name", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+      ] },
+      { name: "business_concept_heading", label: "Business concept heading", kind: "text" },
+      { name: "business_concept_description", label: "Business concept description", kind: "textarea" },
+      { name: "business_concept_items", label: "Business concept points", kind: "repeatable", itemFields: [
+        { name: "name", label: "Name", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea" },
+      ] },
       { name: "offerings_heading", label: "Offerings heading", kind: "text" },
       { name: "offerings_items", label: "Offering items", kind: "repeatable", itemFields: [
         { name: "name", label: "Name", kind: "text", required: true },
@@ -102,6 +118,32 @@ export const cmsModules: Record<CmsModuleKey, CmsModuleConfig> = {
         { name: "description", label: "Description", kind: "textarea", required: true },
         { name: "url", label: "URL", kind: "url" },
       ] },
+      { name: "journey_heading", label: "Business journey heading", kind: "text" },
+      { name: "journey_items", label: "Confirmed journey milestones", kind: "repeatable", itemFields: [
+        { name: "name", label: "Milestone", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+        { name: "date", label: "Date", kind: "date" },
+      ] },
+      { name: "operations_heading", label: "Operations heading", kind: "text" },
+      { name: "operations_description", label: "Operations description", kind: "textarea" },
+      { name: "production_flow_heading", label: "Production flow heading", kind: "text" },
+      { name: "production_flow_items", label: "Verified production stages", kind: "repeatable", itemFields: [
+        { name: "name", label: "Stage", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+        { name: "role", label: "Role / function", kind: "text" },
+        { name: "order", label: "Order", kind: "number", required: true },
+        { name: "active", label: "Active", kind: "checkbox" },
+      ] },
+      { name: "customer_flow_heading", label: "Product-to-customer flow heading", kind: "text" },
+      { name: "customer_flow_items", label: "Verified customer-flow stages", kind: "repeatable", itemFields: [
+        { name: "name", label: "Stage", kind: "text", required: true },
+        { name: "description", label: "Description", kind: "textarea", required: true },
+        { name: "role", label: "Role / function", kind: "text" },
+        { name: "order", label: "Order", kind: "number", required: true },
+        { name: "active", label: "Active", kind: "checkbox" },
+      ] },
+      { name: "location_heading", label: "Location and operations heading", kind: "text" },
+      { name: "location_description", label: "Location and operations description", kind: "textarea" },
       { name: "cta_label", label: "CTA label", kind: "text" },
       { name: "cta_url", label: "CTA URL", kind: "text" },
       { name: "seo_title", label: "SEO title", kind: "text" },
