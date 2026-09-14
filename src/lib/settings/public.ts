@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import { faviconPath } from "@/lib/settings/favicon";
 
 export type PublicSettings = Record<string, string>;
 
@@ -39,14 +40,12 @@ export async function getConfiguredMetadata(): Promise<Partial<Metadata>> {
   const settings = await getPublicSettings();
   const supabase = await createClient();
   let imageUrl: string | undefined;
-  let faviconUrl: string | undefined;
-  const mediaIds = [settings.og_image, settings.favicon_media_id].filter(Boolean);
+  const mediaIds = [settings.og_image].filter(Boolean);
   if (mediaIds.length) {
     const { data } = await supabase.from("media").select("id,storage_path").in("id", mediaIds).eq("active", true);
     for (const item of data ?? []) {
       const { data: signed } = await supabase.storage.from("media").createSignedUrl(item.storage_path, 1800);
       if (item.id === settings.og_image) imageUrl = signed?.signedUrl;
-      if (item.id === settings.favicon_media_id) faviconUrl = signed?.signedUrl;
     }
   }
   return {
@@ -60,6 +59,6 @@ export async function getConfiguredMetadata(): Promise<Partial<Metadata>> {
       ...(settings.og_description || settings.meta_description ? { description: settings.og_description || settings.meta_description } : {}),
       ...(imageUrl ? { images: [imageUrl] } : {}),
     },
-    ...(faviconUrl ? { icons: { icon: faviconUrl } } : {}),
+    icons: { icon: faviconPath },
   };
 }
